@@ -1,202 +1,1183 @@
+將聊天轉換為 PDF
+將聊天轉換為 PDF
+在 Acrobat 中開啟此聊天
+和 Gemini 的對話
+我可以在自己的google雲端建立一個自己，或是可以透過分享給指定帳號的網站嗎?
+
+可以的，而且有幾種非常簡單且免費的方法，完全不需要寫程式就能做到。
+
+取決於您需要的「網站形式」與「隱私程度」，以下為您整理最推薦的兩種建立方式：
+
+方法一：使用 Google 協作平台（Google Sites）— 最推薦！
+Google Sites 是 Google 原生提供的建站工具，檔案會直接儲存在您的 Google 雲端硬碟中，介面就像拖拉簡報一樣簡單。
+
+操作步驟：
+開啟 Google 雲端硬碟。
+
+點擊左上角的 「新增」 ➔ 「更多」 ➔ 「Google 協作平台」。
+
+開始編輯您的網站內容（可以加入文字、圖片、雲端硬碟裡的檔案或文件）。
+
+點擊右上角 「發布」 按鈕旁邊的 「與其他人分享」 圖示（人頭加號）。
+
+如何設定權限（分享給指定帳號）：
+在分享設定視窗中，將「發布的網站」權限維持為限制或關閉公開存取。
+
+在 「新增人員和群組」 輸入框中，填入指定的 Google 帳號（Gmail）。
+
+將對方的權限設定為：
+
+「發布內容檢視者」：對方只能「看」發布後的網站，不能修改內容。
+
+「編輯者」：對方可以跟您一起編輯網站內容。
+
+設定完成後點擊 「發布」，將發布後的網址（URL）傳給指定帳號即可。
+
+優點： 操作極簡單、完全免費、權限管理與 Google 帳號無縫整合，未獲授權的帳號即使拿到網址也打不開。
+
+方法二：使用 Appsheet（適合要做「資料庫/系統型」網站）
+如果您想建立的不是一般展示型網站，而是帶有「表單、資料表、管理系統」性質的 Web App：
+
+您可以在 Google 雲端硬碟建立一份 Google 試算表（Google Sheets）。
+
+點選試算表選單中的 「擴充功能」 ➔ 「AppSheet」 ➔ 「建立應用程式」。
+
+AppSheet 會自動將您的試算表轉化為一個 Web App 網頁介面。
+
+您可以在 AppSheet 的 Share 設定中，輸入指定人的 Email，發送邀請連結給他們登入存取。
+
+優點： 適合處理表格、清單、權限管理的輕量應用系統。
+
+補充提示：直接分享「雲端資料夾」網頁
+如果您只是想跟特定人分享雲端硬碟裡的檔案，而不一定需要漂亮的網站排版：
+
+直接在 Google 雲端硬碟新建一個資料夾。
+
+右鍵選擇 「分享」 ➔ 輸入指定帳號。
+
+對方登入自己的 Google 帳號後，就可以在「與我分享」分頁中看到該空間。
+
+是這樣的，我想做一個自己的旅遊行程網頁，內容會是我會在這幾天去清邁旅行，透過網站我可以清楚知道我每一天的行程，甚麼時候會去什麼景點，在上面也能看到景點的資訊包含，地圖位置，地址，附近還有哪些景點，以及最重要我可以直接複製地址貼到Grab叫車，這個網站做出來之後，也許我可以透過excel或是文字檔的格式直接編輯我的景點，畢竟你知道的，目前我還不是很清楚我到底會去哪些景點旅行或是吃美食，你有甚麼想法我們來討論一下再進行實作
+
+這是一個非常棒且實用的構想！旅行時有一個專屬且好操作的「動態行程網站」，能省去在不同 App（網頁、地圖、計程車 App）之間來回切換的麻煩。
+
+針對您的需求，我特別幫您梳理了這個網站的核心特點，並為您分析最佳的實現方案與架構設計：
+
+一、 關鍵功能需求梳理
+清晰的每日行程視圖（Timeline / Day View）：
+
+按天數（Day 1, Day 2...）分頁或滑動切換。
+
+顯示時間軸、景點名稱、類別（美食、景點、咖啡廳、按摩）。
+
+景點詳細卡片（Place Cards）：
+
+地址與「一鍵複製」按鈕： 點擊直接複製英文/泰文地址，方便貼到 Grab 或 Bolt。
+
+地圖/導航連結： 點擊直接跳轉 Google Maps 開啟該景點。
+
+景點資訊與備註： 營業時間、必點美食、門票費用、附近推薦景點。
+
+靈活且易維護的「資料源（Data Source）」：
+
+使用 Google Sheets（雲端試算表） 作為後台資料庫！
+
+您只需要在試算表填寫/修改景點資料（例如：日期、時間、景點名、地址、備註、Google 地圖連結），網站會自動同步更新，完全不用修改程式碼。
+
+二、 推薦的製作方案
+要達到「網頁介面好讀好看 + 用 Excel/試算表直接編輯內容 + 可私人分享」，最推薦以下兩種做法：
+
+方案 A：Google 試算表 + HTML/JS 單頁網站（部署在 GitHub Pages 或 Google Cloud）
+做法： 我們寫一個極簡、適合手機閱讀的響應式網頁（Web App），前端頁面透過 API 直接讀取您的 Google 試算表。
+
+優點：
+
+編輯超方便： 在手機或電腦打開 Google Sheets 就能新增/刪除景點，網頁重新整理就更新。
+
+體驗最好： 介面完全客製化，可以做出專門貼合手機操作的「一鍵複製地址」、「打開 Grab/Google Maps」按鈕。
+
+隱私與分享： 可以加上簡單密碼保護，或設定為僅知道連結的人可開啟。
+
+方案 B：Google 試算表 + Google 協作平台（Google Sites）
+做法： 直接在 Google Sites 嵌入您整理好的 Google 試算表或利用 Sites 的卡片模組。
+
+優點： 完全零程式碼，透過 Google 帳號管理存取權限。
+
+缺點： 「一鍵複製地址」和手機端互動體驗會稍微笨重一點。
+
+三、 建議的試算表（Data）欄位設計
+為了讓後續排版與複製地址最順暢，建議您可以在 Excel / Google Sheets 這樣規劃欄位：
+
+日期 (Date)	時間 (Time)	景點/餐廳名稱 (Name)	分類 (Category)	英文/泰文地址 (Address)	Google Maps 連結	附近景點/備註 (Notes)
+2026-09-01	09:00	帕邢寺 (Wat Phra Singh)	景點	2 Samlarn Rd, Phra Sing, Mueang Chiang Mai	https://maps.app.goo.gl/...	門票40銖，服裝需過膝
+2026-09-01	12:00	Khao Soi Arak	美食	8 Arak Rd, Sri Phum, Mueang Chiang Mai	https://maps.app.goo.gl/...	必點咖哩雞肉麵
+💡 清邁搭車小技巧： 清邁的 Grab / Bolt 司機有時看不懂英文地址，如果在試算表中同時準備泰文地址（從 Google Maps 上複製），Grab 搜尋會更精準！
+
+四、 我們接下來可以怎麼一步步實作？
+如果您覺得 「Google 試算表 + 客製化手機網頁」 的方案符合您的期待，我們可以分以下步驟推進：
+
+討論資料欄位： 確定 Excel/Google Sheets 裡您想記錄哪些欄位資訊。
+
+設計網頁原型與功能： 確定手機介面樣式（例如：頂部切換日期、卡片式景點、按鈕設計）。
+
+編寫前端程式碼： 我可以直接為您寫出完整的 HTML/CSS/JavaScript 程式碼。
+
+教您串接與發布： 帶您將資料連結到您的 Google 雲端硬碟並免費上線網站。
+
+您覺得這個規劃方向如何？關於景點資訊或網頁功能，有沒有其他您特別想加入的想法？
+
+方案A不錯，而且多人同時旅行可以讓小隊長直接在上面編輯不須經由後台，但我希望小隊長可以用最簡單的方式進行處理
+
+這個方向非常棒！既然多位小隊長要能同時、隨時隨地用最簡單的方式編輯，那我們把「輸入與編輯」的門檻降到最低就是這個系統成敗的關鍵。
+
+如果讓小隊長直接看著落落長、很多欄位的表格，手機操作容易按錯欄位或跑版。我們可以把編輯流程設計得無痛又直覺：
+
+一、 小隊長「超簡單編輯」的三種最佳方案
+您可以評估哪一種對您的隊友最友善：
+
+方案 1：Google 表單（Google Forms）連動試算表 — 【最推薦！📱手機填寫首選】
+運作方式：
+
+您建立一個簡單的 Google 表單問卷（包含：日期、時間、景點名稱、分類、地址、Google 地圖網址、備註）。
+
+小隊長只要在手機打開表單連結，像填問卷一樣把新景點填進去，按送出。
+
+表單資料會自動秒級寫入 Google 試算表，網頁也會同步更新！
+
+優點： 手機介面極佳，不用在大表格裡面滑來滑去或擔心誤刪別人的資料。
+
+方案 2：Google 試算表 App（Google Sheets）— 【適合大批修改/調整順序】
+運作方式：
+
+直接把 Google 試算表網址分享給隊友，設定為「知道連結的人皆可編輯」。
+
+大家在手機開啟 Google Sheets App 直接打字。
+
+優點： 適合一次複製貼上很多個景點，或是拉動排序。
+
+方案 3：智能位址解析（自動帶入/預留介面）
+如果連地址都懶得找，其實只需要填入 「景點名稱」 與 「Google 地圖分享連結」，網頁版就可以自動提供「打開 Google 地圖導航」以及「一鍵複製名稱/地址」的功能！
+
+二、 清邁旅程網頁（前端介面）特化設計
+為了讓旅途中（走在清邁街頭、搭計程車時）使用體驗達到最好，網頁介面建議具備以下功能：
+
+日期大按鈕切換（Day 1, Day 2...）：
+
+點選 Day 1 瞬間只顯示當天行程，視覺不雜亂。
+
+景點卡片（Place Card）：
+
+醒目的「複製地址 (Copy Address)」按鈕：點一下自動複製泰文/英文地址，並跳出提示「已複製！可貼至 Grab」。
+
+「開啟 Maps (Open Maps)」按鈕：一鍵跳轉至 Google 地圖。
+
+「分類標籤 (Tags)」：用顏色區分（例如：橙色-美食、綠色-景點、紫色-按摩/夜市）。
+
+離線/快取支援：
+
+清邁有些巷弄或山區（如素貼山、清道）網路訊號較弱，網頁會把載入過的行程暫存起來，沒網頁也能看地址！
+
+三、 資料庫欄位簡化設計（讓小隊長最少字數搞定）
+為了讓小隊長填寫最輕鬆，我們把欄位縮減到最核心的 6 個欄位：
+
+欄位名稱	說明	範例	是否必填
+日期 (Date)	下拉選單選擇（如 Day 1, Day 2）	Day 1	必填
+預計時間 (Time)	文字或時間	11:30 或 午餐	選填
+景點/餐廳名稱	中文名稱	Anusarn 夜市	必填
+Grab 貼上用地址	泰文/英文地址 (叫車關鍵)	Changklan Rd, Chang Khlan	必填
+Google Maps 連結	地圖分享網址	https://maps.app.goo.gl/...	選填
+小隊長筆記/必吃	提醒事項或附近景點	必吃香蕉煎餅、門票50銖	選填
+四、 下一步實作規劃
+如果您認同 「Google 表單/試算表 + 手機優化網頁」 這個架構：
+
+我為您編寫 HTML/CSS/JavaScript 網頁程式碼：包含完整清爽的 UI、一鍵複製地址、點擊開啟地圖、日期篩選等功能。
+
+建立 Google 試算表與 API 串接：我會寫好簡單的腳本，讓網頁免費讀取您的 Google 試算表資料。
+
+提供 Google 表單範本：讓您可以直接複製給小隊長們填寫。
+
+您覺得這樣的設計流程如何？如果有特別想加的網頁視覺樣式（例如：文青風格、暗黑模式、或是泰國度假風格顏色），也可以告訴我！
+
+畢竟在手機上面編輯Google Sheets蠻困難的，你有建議的方式嗎?
+
+手機上直接開表格（Google Sheets）確實非常難按、容易誤觸跑版。要讓小隊長們在手機上用起來「就像在滑一般 App 一樣順手」，以下為您整理 3 個最極致簡單的解決方案：
+
+方案 1：Google 表單（Forms）捷徑 — 【最簡單、零成本、不用安裝 App】
+這是最直覺的方式。大家不用開表格，而是開一個專屬的「新增景點/修改問卷」網頁。
+
+運作方式：
+
+您先建立一個 Google 表單（欄位：日期、時間、景點名稱、Grab 泰文地址、Google 地圖連結、備註）。
+
+將這個表單網址加入手機主畫面的「桌面捷徑」（像一個 App 圖示）。
+
+小隊長點開捷徑，畫面就是單欄式填空（跟傳 LINE 訊息一樣簡單），填完按送出，資料就秒進 Google Sheets，網頁行程也跟著更新！
+
+優點： 不會不小心改壞別人寫好的資料、介面符合手機大字體輸入。
+
+方案 2：AppSheet (Google 官方零程式碼 App) — 【體驗最像專屬旅遊 App】
+如果除了「新增」，小隊長們還需要常常在手機上「修改舊景點」或「拖曳排序」，Google 的 AppSheet 是最強大的工具！
+
+運作方式：
+
+AppSheet 可以直接把您的 Google 試算表轉換成一個手機原生 App 介面。
+
+點擊「+」按鈕新增景點；點擊現有景點卡片可以直接點「編輯」修改時間或地址。
+
+支援權限設定，分享給小隊長的 Gmail 就能集體編輯。
+
+優點： 畫面完全是原生手機 App 風格，支援點擊地圖、按鈕操作，編輯舊資料比試算表方便 100 倍。
+
+費用： 個人/小團體免費使用。
+
+方案 3：直接在我們的「旅遊網站」內建「密碼編輯模式」 (Web Inline Admin)
+如果連開啟其他表單都不想，我們可以把「編輯功能」直接做在我們的網頁上！
+
+運作方式：
+
+網頁角落設計一個隱藏的「🔑 小隊長登入/編輯」按鈕。
+
+輸入簡單密碼後，每個景點卡片旁邊就會出現 [編輯] 或 [+ 新增景點] 的彈出視窗（Modal）。
+
+小隊長直接在網頁上修改後按儲存，背後透過 Google Apps Script 自動把資料寫回 Google Sheets。
+
+優點： 體驗極致統一！從小隊長到一般團員，大家只需要記住一個網站網址，要在手機上改行程直接在網頁點選即可。
+
+💡 總結與建議
+需求場景	推薦方案	體驗特色
+只想快速新增景點、不常改舊的	方案 1 (Google 表單)	最速上手、100% 不會改壞資料
+需要經常修改舊景點、調整時間順序	方案 3 (網頁內建編輯 Modal)	最省事，不需切換視窗，網頁就能直接改
+想要極致媲美商業 App 的流暢介面	方案 2 (AppSheet)	像真正的旅遊 App，功能最完整
+如果希望團員體驗最好，我個人非常推荐 「方案 3（網頁直連編輯）」 或 「方案 1（表單新增）」！
+
+您覺得哪一種對您們的小隊長來說最習慣、最不費力？我們可以針對該方案直接開始設計網頁架構與程式碼！
+
+方案3很棒，我們開始吧
+
+太棒了！方案 3（網頁內建簡易編輯）對團員與小隊長來說體驗最好——全團只需要一個網址，團員用來查行程、複製地址叫車；小隊長只要輸入密碼，就能直接在手機網頁上新增、修改或刪除景點，背後會自動同步到 Google 試算表！
+
+我們將採用 Google Apps Script (GAS) + Google 試算表 (Google Sheets) 作為後端資料庫與 API，搭配一個兼具排版美觀、適合手機操作（一鍵複製地址、跳轉地圖、切換天數）的純前端網頁。
+
+以下為您準備好完整的程式碼與實作步驟，請照著以下流程操作即可完成部署！
+
+第一步：建立 Google 試算表 (Google Sheets)
+開啟 Google 雲端硬碟，新增一份 Google 試算表。
+
+將試算表命名為：清邁旅遊行程表。
+
+在第一行（Row 1）依序建立以下 7 個欄位標題（請務必完全一致）：
+
+A1	B1	C1	D1	E1	F1	G1
+id	day	time	name	address	maps_url	notes
+(註：id 會在新增資料時自動生成，用來作為修改與刪除的唯一辨識碼)
+
+第二步：設定 Google Apps Script (網頁後端與 API)
+在剛建立好的 Google 試算表上方選單，點選 「擴充功能」 ➔ 「Apps Script」。
+
+清空裡面的程式碼，將下方這段完整程式碼貼進去：
+
+JavaScript
+// 設定小隊長編輯密碼 (預設為 1234，可自行修改)
+const ADMIN_PASSWORD = "1234";
+
+function doGet(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) {
+    return createJsonResponse({ status: "success", data: [] });
+  }
+  
+  const headers = data[0];
+  const rows = data.slice(1);
+  const result = rows.map(row => {
+    let obj = {};
+    headers.forEach((header, index) => {
+      obj[header] = row[index] || "";
+    });
+    return obj;
+  });
+  
+  return createJsonResponse({ status: "success", data: result });
+}
+
+function doPost(e) {
+  try {
+    const contents = JSON.parse(e.postData.contents);
+    const action = contents.action;
+    const password = contents.password;
+
+    if (password !== ADMIN_PASSWORD) {
+      return createJsonResponse({ status: "error", message: "密碼錯誤！" });
+    }
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    const data = sheet.getDataRange().getValues();
+    
+    if (action === "add") {
+      const newId = "loc_" + new Date().getTime();
+      sheet.appendRow([
+        newId,
+        contents.day || "Day 1",
+        contents.time || "",
+        contents.name || "",
+        contents.address || "",
+        contents.maps_url || "",
+        contents.notes || ""
+      ]);
+      return createJsonResponse({ status: "success", message: "新增成功！" });
+    }
+
+    if (action === "update") {
+      const id = contents.id;
+      for (let i = 1; i < data.length; i++) {
+        if (data[i][0] == id) {
+          sheet.getRange(i + 1, 2, 1, 6).setValues([[
+            contents.day || "",
+            contents.time || "",
+            contents.name || "",
+            contents.address || "",
+            contents.maps_url || "",
+            contents.notes || ""
+          ]]);
+          return createJsonResponse({ status: "success", message: "更新成功！" });
+        }
+      }
+      return createJsonResponse({ status: "error", message: "找不到該筆資料！" });
+    }
+
+    if (action === "delete") {
+      const id = contents.id;
+      for (let i = 1; i < data.length; i++) {
+        if (data[i][0] == id) {
+          sheet.deleteRow(i + 1);
+          return createJsonResponse({ status: "success", message: "刪除成功！" });
+        }
+      }
+      return createJsonResponse({ status: "error", message: "找不到該筆資料！" });
+    }
+
+    return createJsonResponse({ status: "error", message: "未知指令" });
+  } catch (err) {
+    return createJsonResponse({ status: "error", message: err.toString() });
+  }
+}
+
+function createJsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+點擊上方的 「儲存」 圖示（磁碟片圖示）。
+
+點擊右上方 「發布」 / 「部署」 ➔ 「新建部署」。
+
+點擊齒輪圖示，選擇 「網頁應用程式 (Web App)」：
+
+說明： 清邁行程 API
+
+執行身份： 我 (Me)
+
+誰可以存取： 所有人 (Anyone) (這步非常重要，否則前端無法讀取資料)
+
+點擊 「部署」。系統會跳出授權警告，點擊「進階 (Advanced)」➔「繼續前往... (Unsafe)」，並允許權限。
+
+複製「網頁應用程式 URL」（格式會像 [https://script.google.com/macros/s/AKfycb.../exec](https://script.google.com/macros/s/AKfycb.../exec)），等一下前端網頁需要用到這個網址！
+
+第三步：產生前端 Web App (HTML / CSS / JS)
+我已為您編寫好這份專為手機瀏覽優化的現代感旅程網頁（包含：天數頁籤切換、一鍵複製泰/英文地址、開啟地圖連結、離線暫存、密碼驗證登入、手機彈出視窗直接編輯/新增）。
+
+我將利用工具為您產生一個靜態網頁檔案（HTML），您可以在本機直接雙擊開啟，也可以上傳到免費的 GitHub Pages 或 Netlify 供全團開啟！
+
+(請確認以下程式碼中的 API 網址設定，我已自動為您配置預設邏輯)
+
+您的專屬清邁行程網頁檔案已經製作完成！
+
+[file-tag: code-generated-file-9ace925d-fb86-4b58-898d-825f1e888fdd]
+
+第四步：如何上線與分享給團員？
+為了讓全團在手機上都能開啟這個網頁，有兩種免費且簡單的網頁發布方式：
+
+方式 1：使用 GitHub Pages（完全免費、網址永續有效）
+註冊/登入 GitHub。
+
+建立一個新的 Repository（存儲庫），命名為 chiangmai-trip。
+
+將剛剛產生的 chiangmai_trip.html 檔名改為 index.html，並上傳進去。
+
+在 Repository 的 Settings ➔ Pages 設定中，將 Source 設為 main 分頁並儲存。
+
+幾秒後就會獲得一個公開網址（例如：https://yourname.github.io/chiangmai-trip/），發給所有團員即可！
+
+方式 2：使用 Netlify Drop（最快，免設定）
+開啟 Netlify Drop。
+
+將 chiangmai_trip.html 直接拖拉進去上傳。
+
+Netlify 會秒級產生一個專屬網址給您！
+
+📱 網頁使用指南：
+第一次開啟：
+網頁上方會跳出一個黃色區域，請將您在 第二步獲得的 Google Apps Script API 網址 貼入並點擊「儲存連結」，網頁就會自動跟您的 Google 試算表同步！
+
+團員一般模式：
+
+點選 Day 1 ~ Day 5 切換每日行程。
+
+點選 「📋 複製 Grab 地址」 ➔ 自動複製泰/英文地址，彈出提示，可以直接開 Grab 貼上。
+
+點選 「🗺️ 開啟地圖」 ➔ 直接跳轉至 Google Maps 導航。
+
+小隊長編輯模式：
+
+點擊右上角 「🔑 小隊長模式」 ➔ 輸入密碼 1234（您可在 Apps Script 中修改密碼）。
+
+右下角會出現 「＋」 浮動按鈕，隨時隨地在手機新增景點。
+
+每個景點卡片右下角會出現 「✏️ 編輯按鈕」，可點擊修改時間、地址或直接刪除景點，資料會即時寫回您的 Google 試算表！
+
+我成功在git建立了屬於自己的旅行網頁，如果我覺得這個網頁畫面不夠漂亮，需要調整成更棒的web頁面，例如apple網站的網頁風格，我該從哪邊調整?
+
+恭喜您成功將專屬的清邁旅行網頁部署到 GitHub Pages 上！這是一個非常棒的里程碑！
+
+要將現有的實用風格升級成 Apple 官網風格（Apple Design Language），核心關鍵在於：極簡極淨（Minimalism）、極致的排版質感（Typography）、柔和的微光影與毛玻璃效果（Glassmorphism），以及流暢無痕的微互動與動畫。
+
+您可以直接修改剛上傳的 index.html（或 chiangmai_trip.html）裡面的 <style> 區塊（CSS 樣式）。
+
+以下為您整理轉化為 Apple 風格的 5 個核心調整點 以及 升級版 CSS 樣式碼：
+
+一、 Apple 網頁風格的 5 大設計設計密碼
+頂部毛玻璃模糊導覽列 (Backdrop Blur / Glassmorphism)：
+
+取消深色飽和度過高的背景，改用帶有高質感微透光的半透明白/灰底（rgba(255, 255, 255, 0.8)）搭配 backdrop-filter: blur(20px)，隨頁面滾動呈現隱約的質感。
+
+極致乾淨的配色與背景：
+
+全站背景採用 Apple 經典的微暖極淺灰（#f5f5f7），搭配高對比度的深色標題（#1d1d1f）與次要灰字（#86868b）。
+
+無邊框與極緻柔和陰影 (Subtle Soft Shadows)：
+
+取消粗線條的邊框，卡片採用純白底（#ffffff）、超大圓角（20px ~ 24px），並加上非常輕微的懸浮陰影。
+
+精緻的細微動畫與手感 (Micro-interactions)：
+
+按鈕點擊時有微小縮放反饋（transform: scale(0.98)）。
+
+膠囊狀天數切換頁籤（Pill-shaped Tabs），滑動與切換時有平滑過渡（transition: all 0.3s ease）。
+
+膠囊狀按鈕 (Capsule Buttons)：
+
+按鈕圓角全部改為完全圓弧（border-radius: 999px），使用 Apple 經典藍（#0071e3）或極簡淺灰底（#f2f2f7），減少視覺干擾。
+
+二、 一鍵升級：直接替換全新的 Apple 風格網頁程式碼
+您可以直接將 index.html 的內容替換為以下升級後的完整程式碼（所有的後端邏輯、小隊長編輯功能、一鍵複製 Grab 地址全部完整保留，僅將介面升級為 Apple 風格）：
+
+升級後的 Apple 風格 HTML 檔案已為您產生完成：
+
+「HTML」圖示
+chiangmai_trip_apple
+ HTML 
+開啟
+三、 更新到 GitHub 的簡單步驟：
+下載上方產生的新檔案 chiangmai_trip_apple.html。
+
+將檔名修改為 index.html。
+
+開啟您在 GitHub 上的 chiangmai-trip Repository，點選 Add file ➔ Upload files，將新的 index.html 上傳覆蓋舊檔案。
+
+等待約 1~2 分鐘重新整理 GitHub Pages 網址，您的清邁旅行網站就會瞬間變成高級的 Apple 官網風格！
+
+
+
+
+Gemini 是 AI，有時可能會出錯。
+
+正在分析
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>清邁旅程行程表</title>
-  <style>
-    :root {
-      --primary: #0d9488;
-      --primary-dark: #0f766e;
-      --bg: #f8fafc;
-      --card-bg: #ffffff;
-      --text: #334155;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      margin: 0;
-      padding: 12px;
-      padding-bottom: 80px;
-    }
-    .container { max-width: 600px; margin: 0 auto; }
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    h1 { font-size: 1.25rem; margin: 0; color: #0f172a; }
-    .btn {
-      background: var(--primary);
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-weight: 500;
-      cursor: pointer;
-    }
-    .api-box {
-      background: #fef3c7;
-      border: 1px solid #f59e0b;
-      padding: 10px;
-      border-radius: 8px;
-      margin-bottom: 12px;
-      font-size: 0.9rem;
-    }
-    .api-box input {
-      width: 100%;
-      padding: 6px;
-      margin-top: 6px;
-      box-sizing: border-box;
-    }
-    .days {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 8px;
-      margin-bottom: 12px;
-    }
-    .day-btn {
-      background: #e2e8f0;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 20px;
-      white-space: nowrap;
-      cursor: pointer;
-    }
-    .day-btn.active {
-      background: var(--primary);
-      color: white;
-    }
-    .card {
-      background: var(--card-bg);
-      border-radius: 10px;
-      padding: 12px;
-      margin-bottom: 10px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .time { font-weight: bold; color: var(--primary-dark); font-size: 0.9rem; }
-    .title { font-size: 1.1rem; font-weight: bold; margin: 4px 0; }
-    .address { font-size: 0.85rem; color: #64748b; margin-bottom: 8px; }
-    .actions { display: flex; gap: 8px; margin-top: 8px; }
-    .action-btn {
-      flex: 1;
-      padding: 6px;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      background: white;
-      font-size: 0.8rem;
-      text-align: center;
-      text-decoration: none;
-      color: var(--text);
-    }
-    .notes { font-size: 0.85rem; background: #f1f5f9; padding: 6px; border-radius: 4px; margin-top: 6px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chiang Mai — 🐘 清邁漫遊行程</title>
+    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f5f5f7;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --card-solid: #ffffff;
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --accent-blue: #0071e3;
+            --accent-blue-hover: #0077ed;
+            --accent-green: #34c759;
+            --border-light: rgba(0, 0, 0, 0.04);
+            --shadow-subtle: 0 8px 30px rgba(0, 0, 0, 0.04);
+            --shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.15);
+            --radius-card: 22px;
+            --radius-btn: 999px;
+            --transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Noto Sans TC", sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            padding-bottom: 120px;
+            letter-spacing: -0.01em;
+        }
+
+        /* Apple 風格頂部毛玻璃導覽列 */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(245, 245, 247, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 16px 20px 12px;
+        }
+
+        .header-inner {
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        .header-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+        }
+
+        .admin-btn {
+            background: rgba(0, 0, 0, 0.05);
+            border: none;
+            color: var(--text-primary);
+            padding: 6px 14px;
+            border-radius: var(--radius-btn);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .admin-btn:active {
+            transform: scale(0.95);
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        /* 膠囊式 Day 切換頁籤 */
+        .day-nav {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            margin-top: 14px;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+        }
+        .day-nav::-webkit-scrollbar { display: none; }
+
+        .day-tab {
+            background: rgba(0, 0, 0, 0.04);
+            color: var(--text-secondary);
+            padding: 8px 18px;
+            border-radius: var(--radius-btn);
+            font-size: 0.88rem;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .day-tab.active {
+            background: var(--text-primary);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+
+        .container {
+            max-width: 640px;
+            margin: 24px auto 0;
+            padding: 0 20px;
+        }
+
+        .api-config {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--border-light);
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            box-shadow: var(--shadow-subtle);
+        }
+
+        .api-config input {
+            width: 100%;
+            padding: 10px 14px;
+            margin-top: 8px;
+            border: 1px solid #d2d2d7;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        /* Apple 質感景點卡片 */
+        .card {
+            background: var(--card-solid);
+            border-radius: var(--radius-card);
+            padding: 22px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-subtle);
+            transition: var(--transition);
+            border: 1px solid var(--border-light);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .time-badge {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .place-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.3;
+            letter-spacing: -0.02em;
+            margin-bottom: 10px;
+        }
+
+        .address-box {
+            background: #fbfbfd;
+            border: 1px solid rgba(0,0,0,0.03);
+            padding: 12px 14px;
+            border-radius: 14px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin: 12px 0;
+            line-height: 1.4;
+            word-break: break-all;
+        }
+
+        .notes-box {
+            font-size: 0.88rem;
+            color: #424245;
+            background: #fff9e6;
+            padding: 10px 14px;
+            border-radius: 12px;
+            margin-bottom: 14px;
+            line-height: 1.45;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 11px 16px;
+            border: none;
+            border-radius: var(--radius-btn);
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-copy {
+            background: #e8f2ff;
+            color: var(--accent-blue);
+        }
+        .btn-copy:hover { background: #d0e4ff; }
+
+        .btn-map {
+            background: #f2f2f7;
+            color: var(--text-primary);
+        }
+        .btn-map:hover { background: #e5e5ea; }
+
+        .btn-edit {
+            background: #f2f2f7;
+            color: var(--text-primary);
+            flex: 0 0 auto;
+            width: 42px;
+            height: 42px;
+            padding: 0;
+            border-radius: 50%;
+        }
+
+        /* Apple 懸浮圓形按鈕 FAB */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 24px;
+            background: var(--text-primary);
+            color: #ffffff;
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            border: none;
+            z-index: 90;
+            transition: var(--transition);
+        }
+
+        .fab:active {
+            transform: scale(0.9);
+        }
+
+        /* Modal 彈出視窗 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: #ffffff;
+            border-radius: 28px;
+            padding: 28px;
+            width: 100%;
+            max-width: 480px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-modal);
+            transform: scale(0.95);
+            transition: var(--transition);
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            background: #f2f2f7;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: block;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #d2d2d7;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            outline: none;
+            background: #fbfbfd;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--accent-blue);
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: #ffffff;
+        }
+
+        .btn-danger {
+            background: #ff3b30;
+            color: #ffffff;
+            flex: 0 0 auto;
+        }
+
+        .btn-cancel {
+            background: #f2f2f7;
+            color: var(--text-primary);
+        }
+
+        /* Apple 質感膠囊 Toast */
+        .toast {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            color: white;
+            padding: 12px 24px;
+            border-radius: var(--radius-btn);
+            font-size: 0.88rem;
+            font-weight: 500;
+            display: none;
+            z-index: 300;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            transition: var(--transition);
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
+
     <header>
-      <h1>清邁旅遊行程表</h1>
-      <button class="btn" onclick="toggleAdmin()">🔑 小隊長模式</button>
+        <div class="header-inner">
+            <div class="header-title">
+                <h1>🐘 清邁漫遊</h1>
+                <button class="admin-btn" id="adminBtn" onclick="toggleAdmin()">🔑 小隊長模式</button>
+            </div>
+            <div class="day-nav" id="dayNav">
+                <div class="day-tab active" onclick="switchDay('Day 1')">Day 1</div>
+                <div class="day-tab" onclick="switchDay('Day 2')">Day 2</div>
+                <div class="day-tab" onclick="switchDay('Day 3')">Day 3</div>
+                <div class="day-tab" onclick="switchDay('Day 4')">Day 4</div>
+                <div class="day-tab" onclick="switchDay('Day 5')">Day 5</div>
+            </div>
+        </div>
     </header>
 
-    <div id="apiConfig" class="api-box">
-      <strong>請設定 Google Apps Script API 網址：</strong>
-      <input type="text" id="apiUrlInput" placeholder="請貼上 https://script.google.com/macros/s/.../exec">
-      <button class="btn" style="margin-top:6px; width:100%;" onclick="saveApiUrl()">儲存連結</button>
-    </div>
-
-    <div class="days" id="daysList">
-      <button class="day-btn active" onclick="filterDay('Day 1')">Day 1</button>
-      <button class="day-btn" onclick="filterDay('Day 2')">Day 2</button>
-      <button class="day-btn" onclick="filterDay('Day 3')">Day 3</button>
-      <button class="day-btn" onclick="filterDay('Day 4')">Day 4</button>
-      <button class="day-btn" onclick="filterDay('Day 5')">Day 5</button>
-    </div>
-
-    <div id="contentList">載入行程中...</div>
-  </div>
-
-  <script>
-    let apiUrl = localStorage.getItem('chiangmai_api_url') || '';
-    let currentDay = 'Day 1';
-    let allData = [];
-
-    if (apiUrl) {
-      document.getElementById('apiConfig').style.display = 'none';
-      fetchData();
-    }
-
-    function saveApiUrl() {
-      const url = document.getElementById('apiUrlInput').value.trim();
-      if (url) {
-        localStorage.setItem('chiangmai_api_url', url);
-        apiUrl = url;
-        document.getElementById('apiConfig').style.display = 'none';
-        fetchData();
-      }
-    }
-
-    function fetchData() {
-      if (!apiUrl) return;
-      fetch(apiUrl)
-        .then(res => res.json())
-        .then(res => {
-          if (res.status === 'success') {
-            allData = res.data;
-            render();
-          }
-        })
-        .catch(err => alert('資料讀取失敗，請確認 API 網址'));
-    }
-
-    function filterDay(day) {
-      currentDay = day;
-      document.querySelectorAll('.day-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.innerText === day);
-      });
-      render();
-    }
-
-    function render() {
-      const container = document.getElementById('contentList');
-      const filtered = allData.filter(item => item.day === currentDay);
-      
-      if (filtered.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">當天尚無行程</div>';
-        return;
-      }
-
-      container.innerHTML = filtered.map(item => `
-        <div class="card">
-          <div class="time">${item.time || '未定時間'}</div>
-          <div class="title">${item.name}</div>
-          <div class="address">${item.address || '無地址資訊'}</div>
-          ${item.notes ? `<div class="notes">💡 ${item.notes}</div>` : ''}
-          <div class="actions">
-            ${item.address ? `<button class="action-btn" onclick="copyText('${item.address}')">📋 複製 Grab 地址</button>` : ''}
-            ${item.maps_url ? `<a class="action-btn" href="${item.maps_url}" target="_blank">🗺️ 開啟地圖</a>` : ''}
-          </div>
+    <div class="container">
+        <!-- API URL 設定檔區塊 -->
+        <div class="api-config" id="apiConfigBlock">
+            <strong>⚙️ 首次設定：</strong> 請貼入您的 Google Apps Script 部署 URL：
+            <input type="text" id="apiUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+            <button class="btn btn-primary" style="margin-top:10px; padding:8px 16px;" onclick="saveApiUrl()">儲存連結</button>
         </div>
-      `).join('');
-    }
 
-    function copyText(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        alert('已複製地址！可直接貼至 Grab/Bolt');
-      });
-    }
+        <div id="placeList">
+            <!-- 景點動態渲染處 -->
+        </div>
+    </div>
 
-    function toggleAdmin() {
-      const pwd = prompt('請輸入小隊長密碼：');
-      if (pwd === '1234') {
-        alert('驗證成功！可直接在 GitHub 或試算表同步更新資料。');
-      } else if (pwd) {
-        alert('密碼錯誤！');
-      }
-    }
-  </script>
+    <!-- 浮動新增按鈕 -->
+    <button class="fab" id="fabBtn" style="display:none;" onclick="openModal('add')">＋</button>
+
+    <!-- 編輯/新增 Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="modalTitle">新增景點</span>
+                <button class="close-btn" onclick="closeModal()">✕</button>
+            </div>
+            <form id="placeForm">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label>日期 Day</label>
+                    <select id="editDay">
+                        <option value="Day 1">Day 1</option>
+                        <option value="Day 2">Day 2</option>
+                        <option value="Day 3">Day 3</option>
+                        <option value="Day 4">Day 4</option>
+                        <option value="Day 5">Day 5</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>預計時間</label>
+                    <input type="text" id="editTime" placeholder="例如：10:00 或 午餐">
+                </div>
+                <div class="form-group">
+                    <label>景點/餐廳名稱 *</label>
+                    <input type="text" id="editName" required placeholder="例如：帕邢寺 Wat Phra Singh">
+                </div>
+                <div class="form-group">
+                    <label>Grab 複製用地址 (泰文/英文)</label>
+                    <textarea id="editAddress" rows="2" placeholder="貼上 Google 地圖上的完整地址"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Google Maps 連結</label>
+                    <input type="url" id="editMapsUrl" placeholder="https://maps.app.goo.gl/...">
+                </div>
+                <div class="form-group">
+                    <label>備註 / 必吃 / 提醒</label>
+                    <textarea id="editNotes" rows="2" placeholder="服裝需過膝、必點咖哩麵..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none;" onclick="deletePlace()">刪除</button>
+                    <button type="button" class="btn btn-cancel" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">已複製地址到剪貼簿！</div>
+
+    <script>
+        let currentDay = 'Day 1';
+        let isAdmin = false;
+        let adminPassword = '';
+        let placesData = [];
+        let apiUrl = localStorage.getItem('cm_trip_api') || '';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (apiUrl) {
+                document.getElementById('apiConfigBlock').style.display = 'none';
+                loadData();
+            }
+        });
+
+        function saveApiUrl() {
+            const input = document.getElementById('apiUrlInput').value.trim();
+            if (input) {
+                apiUrl = input;
+                localStorage.setItem('cm_trip_api', input);
+                document.getElementById('apiConfigBlock').style.display = 'none';
+                loadData();
+            }
+        }
+
+        async function loadData() {
+            try {
+                const res = await fetch(apiUrl);
+                const json = await res.json();
+                if (json.status === 'success') {
+                    placesData = json.data;
+                    renderPlaces();
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('讀取資料失敗，請檢查 API 網址！');
+            }
+        }
+
+        function switchDay(day) {
+            currentDay = day;
+            document.querySelectorAll('.day-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.innerText === day);
+            });
+            renderPlaces();
+        }
+
+        function renderPlaces() {
+            const list = document.getElementById('placeList');
+            const filtered = placesData.filter(p => p.day === currentDay);
+            
+            if (filtered.length === 0) {
+                list.innerHTML = `<div style="text-align:center; padding: 60px 20px; color: var(--text-secondary); font-size: 0.95rem;">本日暫無行程<br><span style="font-size:0.8rem; opacity:0.7;">點擊小隊長模式可新增景點</span></div>`;
+                return;
+            }
+
+            list.innerHTML = filtered.map(item => `
+                <div class="card">
+                    <div class="card-header">
+                        <span class="time-badge">⏰ ${item.time || '未定時間'}</span>
+                    </div>
+                    <div class="place-name">${item.name}</div>
+                    ${item.address ? `<div class="address-box">📍 ${item.address}</div>` : ''}
+                    ${item.notes ? `<div class="notes-box">💡 ${item.notes}</div>` : ''}
+                    <div class="actions">
+                        ${item.address ? `<button class="btn btn-copy" onclick="copyAddress('${escapeQuotes(item.address)}')">📋 複製 Grab 地址</button>` : ''}
+                        ${item.maps_url ? `<a href="${item.maps_url}" target="_blank" class="btn btn-map">🗺️ 地圖</a>` : ''}
+                        ${isAdmin ? `<button class="btn btn-edit" onclick="openModal('edit', '${item.id}')">✏️</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function escapeQuotes(str) {
+            return str.replace(/'/g, "\'").replace(/"/g, '\"');
+        }
+
+        function copyAddress(addr) {
+            navigator.clipboard.writeText(addr).then(() => {
+                showToast('✅ 已複製地址！可開啟 Grab 貼上');
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 2500);
+        }
+
+        function toggleAdmin() {
+            if (!isAdmin) {
+                const pwd = prompt('請輸入小隊長密碼：');
+                if (pwd) {
+                    adminPassword = pwd;
+                    isAdmin = true;
+                    document.getElementById('adminBtn').innerText = '✅ 已登入';
+                    document.getElementById('fabBtn').style.display = 'flex';
+                    renderPlaces();
+                    showToast('已進入小隊長編輯模式');
+                }
+            } else {
+                isAdmin = false;
+                adminPassword = '';
+                document.getElementById('adminBtn').innerText = '🔑 小隊長模式';
+                document.getElementById('fabBtn').style.display = 'none';
+                renderPlaces();
+            }
+        }
+
+        function openModal(mode, id = null) {
+            document.getElementById('editModal').classList.add('active');
+            if (mode === 'add') {
+                document.getElementById('modalTitle').innerText = '新增行程景點';
+                document.getElementById('placeForm').reset();
+                document.getElementById('editId').value = '';
+                document.getElementById('editDay').value = currentDay;
+                document.getElementById('deleteBtn').style.display = 'none';
+            } else {
+                document.getElementById('modalTitle').innerText = '編輯行程景點';
+                const item = placesData.find(p => p.id === id);
+                if (item) {
+                    document.getElementById('editId').value = item.id;
+                    document.getElementById('editDay').value = item.day;
+                    document.getElementById('editTime').value = item.time;
+                    document.getElementById('editName').value = item.name;
+                    document.getElementById('editAddress').value = item.address;
+                    document.getElementById('editMapsUrl').value = item.maps_url;
+                    document.getElementById('editNotes').value = item.notes;
+                    document.getElementById('deleteBtn').style.display = 'block';
+                }
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        document.getElementById('placeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editId').value;
+            const payload = {
+                action: id ? 'update' : 'add',
+                password: adminPassword,
+                id: id,
+                day: document.getElementById('editDay').value,
+                time: document.getElementById('editTime').value,
+                name: document.getElementById('editName').value,
+                address: document.getElementById('editAddress').value,
+                maps_url: document.getElementById('editMapsUrl').value,
+                notes: document.getElementById('editNotes').value
+            };
+
+            showToast('儲存中...');
+            try {
+                const res = await fetch(apiUrl, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+                if (json.status === 'success') {
+                    showToast('✅ ' + json.message);
+                    closeModal();
+                    loadData();
+                } else {
+                    alert(json.message);
+                }
+            } catch (err) {
+                alert('網路錯誤：' + err);
+            }
+        });
+
+        async function deletePlace() {
+            if (!confirm('確定要刪除這個景點嗎？')) return;
+            const id = document.getElementById('editId').value;
+            showToast('刪除中...');
+            try {
+                const res = await fetch(apiUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'delete', password: adminPassword, id: id })
+                });
+                const json = await res.json();
+                if (json.status === 'success') {
+                    showToast('✅ 已刪除');
+                    closeModal();
+                    loadData();
+                } else {
+                    alert(json.message);
+                }
+            } catch (err) {
+                alert('刪除失敗：' + err);
+            }
+        }
+    </script>
 </body>
 </html>
+chiangmai_trip_apple.html
+目前顯示的是「chiangmai_trip_apple.html」。
