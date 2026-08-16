@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>清邁旅程行程表</title>
+  <style>
+    :root {
+      --primary: #0d9488;
+      --primary-dark: #0f766e;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #334155;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 12px;
+      padding-bottom: 80px;
+    }
+    .container { max-width: 600px; margin: 0 auto; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    h1 { font-size: 1.25rem; margin: 0; color: #0f172a; }
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .api-box {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+    }
+    .api-box input {
+      width: 100%;
+      padding: 6px;
+      margin-top: 6px;
+      box-sizing: border-box;
+    }
+    .days {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .day-btn {
+      background: #e2e8f0;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 20px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .day-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .time { font-weight: bold; color: var(--primary-dark); font-size: 0.9rem; }
+    .title { font-size: 1.1rem; font-weight: bold; margin: 4px 0; }
+    .address { font-size: 0.85rem; color: #64748b; margin-bottom: 8px; }
+    .actions { display: flex; gap: 8px; margin-top: 8px; }
+    .action-btn {
+      flex: 1;
+      padding: 6px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: white;
+      font-size: 0.8rem;
+      text-align: center;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .notes { font-size: 0.85rem; background: #f1f5f9; padding: 6px; border-radius: 4px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>清邁旅遊行程表</h1>
+      <button class="btn" onclick="toggleAdmin()">🔑 小隊長模式</button>
+    </header>
+
+    <div id="apiConfig" class="api-box">
+      <strong>請設定 Google Apps Script API 網址：</strong>
+      <input type="text" id="apiUrlInput" placeholder="請貼上 https://script.google.com/macros/s/.../exec">
+      <button class="btn" style="margin-top:6px; width:100%;" onclick="saveApiUrl()">儲存連結</button>
+    </div>
+
+    <div class="days" id="daysList">
+      <button class="day-btn active" onclick="filterDay('Day 1')">Day 1</button>
+      <button class="day-btn" onclick="filterDay('Day 2')">Day 2</button>
+      <button class="day-btn" onclick="filterDay('Day 3')">Day 3</button>
+      <button class="day-btn" onclick="filterDay('Day 4')">Day 4</button>
+      <button class="day-btn" onclick="filterDay('Day 5')">Day 5</button>
+    </div>
+
+    <div id="contentList">載入行程中...</div>
+  </div>
+
+  <script>
+    let apiUrl = localStorage.getItem('chiangmai_api_url') || '';
+    let currentDay = 'Day 1';
+    let allData = [];
+
+    if (apiUrl) {
+      document.getElementById('apiConfig').style.display = 'none';
+      fetchData();
+    }
+
+    function saveApiUrl() {
+      const url = document.getElementById('apiUrlInput').value.trim();
+      if (url) {
+        localStorage.setItem('chiangmai_api_url', url);
+        apiUrl = url;
+        document.getElementById('apiConfig').style.display = 'none';
+        fetchData();
+      }
+    }
+
+    function fetchData() {
+      if (!apiUrl) return;
+      fetch(apiUrl)
+        .then(res => res.json())
+        .then(res => {
+          if (res.status === 'success') {
+            allData = res.data;
+            render();
+          }
+        })
+        .catch(err => alert('資料讀取失敗，請確認 API 網址'));
+    }
+
+    function filterDay(day) {
+      currentDay = day;
+      document.querySelectorAll('.day-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.innerText === day);
+      });
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById('contentList');
+      const filtered = allData.filter(item => item.day === currentDay);
+      
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">當天尚無行程</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => `
+        <div class="card">
+          <div class="time">${item.time || '未定時間'}</div>
+          <div class="title">${item.name}</div>
+          <div class="address">${item.address || '無地址資訊'}</div>
+          ${item.notes ? `<div class="notes">💡 ${item.notes}</div>` : ''}
+          <div class="actions">
+            ${item.address ? `<button class="action-btn" onclick="copyText('${item.address}')">📋 複製 Grab 地址</button>` : ''}
+            ${item.maps_url ? `<a class="action-btn" href="${item.maps_url}" target="_blank">🗺️ 開啟地圖</a>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function copyText(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('已複製地址！可直接貼至 Grab/Bolt');
+      });
+    }
+
+    function toggleAdmin() {
+      const pwd = prompt('請輸入小隊長密碼：');
+      if (pwd === '1234') {
+        alert('驗證成功！可直接在 GitHub 或試算表同步更新資料。');
+      } else if (pwd) {
+        alert('密碼錯誤！');
+      }
+    }
+  </script>
+</body>
+</html>
