@@ -19,7 +19,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased pb-20">
 
-  <!-- 1. 頂部導覽列 (加入口袋地圖按鈕) -->
+  <!-- 1. 頂部導覽列 -->
   <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
     <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
       <span class="font-bold text-lg tracking-wide">Chiang Mai 2026</span>
@@ -34,7 +34,7 @@
     </div>
   </header>
 
-  <!-- 2. 主標題視覺區 -->
+  <!-- 2. 主標題視覺區 (已更新背景圖片) -->
   <section class="relative bg-cover bg-center text-white py-14 px-4 text-center" 
            style="background-image: url('https://lixiaoyu.tw/wp-content/uploads/20190725165714_69.jpg');">
     <div class="absolute inset-0 bg-slate-900/70"></div>
@@ -120,6 +120,9 @@
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycby3lp2T_FBEQWGLrenjUW5rbmw5WyAO477YXn1Y84PRB6eo2f8Elf-CRcpK4vnB3GHpNw/exec";
 
+    // 儲存已初始化的地圖實體，避免重複建立
+    const mapInstances = {};
+
     // 複製文字功能 (Grab 複製地址用)
     function copyToClipboard(text, btnElement) {
       navigator.clipboard.writeText(text).then(() => {
@@ -131,6 +134,56 @@
           btnElement.classList.remove("bg-emerald-50", "text-emerald-700");
         }, 2000);
       });
+    }
+
+    // 動態開關地圖與繪製功能
+    function toggleMap(eventId, lat, lng, title) {
+      const container = document.getElementById(`map-container-${eventId}`);
+      const btn = document.getElementById(`map-btn-${eventId}`);
+      
+      if (!container) return;
+
+      if (container.classList.contains('hidden')) {
+        // 顯示地圖容器
+        container.classList.remove('hidden');
+        btn.classList.add('bg-amber-100', 'text-amber-800');
+
+        // 如果該地圖尚未建立過，進行初始化
+        if (!mapInstances[eventId]) {
+          const map = L.map(`map-${eventId}`, {
+            attributionControl: false,
+            zoomControl: true
+          }).setView([lat, lng], 14);
+
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18
+          }).addTo(map);
+
+          L.circle([lat, lng], {
+            color: '#f59e0b',
+            fillColor: '#f59e0b',
+            fillOpacity: 0.15,
+            radius: 1000
+          }).addTo(map);
+
+          L.marker([lat, lng]).addTo(map)
+            .bindPopup(`<b>${title}</b>`).openPopup();
+
+          mapInstances[eventId] = map;
+        }
+
+        // 解決隱藏容器重新顯示後 Leaflet 尺寸未更新問題
+        setTimeout(() => {
+          if (mapInstances[eventId]) {
+            mapInstances[eventId].invalidateSize();
+          }
+        }, 200);
+
+      } else {
+        // 隱藏地圖容器
+        container.classList.add('hidden');
+        btn.classList.remove('bg-amber-100', 'text-amber-800');
+      }
     }
 
     // 計算倒數天數
@@ -173,8 +226,6 @@
       { dayId: "day-9", dayLabel: "D9", date: "10/17", fullDate: "10/17 (六)", title: "行程規劃中" }
     ];
 
-    let allEventsList = [];
-
     async function fetchAndRenderItinerary() {
       const container = document.getElementById("itinerary-container");
       
@@ -186,7 +237,6 @@
         defaultDays.forEach(d => { daysMap[d.dayId] = { ...d, events: [] }; });
 
         if (Array.isArray(rawData)) {
-          allEventsList = [];
           rawData.forEach((row, idx) => {
             const dayKey = (row.DayId || row.dayId || "").toString().toLowerCase().trim();
             if (daysMap[dayKey]) {
@@ -198,7 +248,7 @@
                 category: row.Category || "景點",
                 title: row.Title || "未命名行程",
                 subtitle: row.Subtitle || "",
-                address: row.Address || row.Title, // 複製用地址
+                address: row.Address || row.Title,
                 image: row.Image || "https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=600&q=80",
                 notes: row.Notes ? row.Notes.toString().split(';') : [],
                 mapUrl: row.MapUrl || "https://maps.google.com",
@@ -207,15 +257,11 @@
               };
 
               daysMap[dayKey].events.push(eventObj);
-              if (eventObj.lat && eventObj.lng) {
-                allEventsList.push(eventObj);
-              }
             }
           });
         }
 
         renderUI(Object.values(daysMap));
-        initLeafletMaps();
       } catch (error) {
         console.error("載入失敗:", error);
         container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl text-center text-sm">無法載入資料，請確認 API 存取權限。</div>`;
@@ -247,45 +293,55 @@
           eventsHtml = `<div class="bg-white p-6 rounded-xl border border-dashed border-slate-300 text-center text-slate-400 text-sm">尚未新增行程，開啟 Google Sheet 即可隨時填寫！</div>`;
         } else {
           eventsHtml = day.events.map(event => {
+            const hasCoords = event.lat && event.lng;
+            const safeTitle = event.title.replace(/'/g, "\\'");
+
             return `
-              <article class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col md:flex-row mb-6">
-                <!-- 左側：照片 -->
-                <div class="md:w-1/3 h-48 md:h-auto relative bg-slate-200">
-                  <img src="${event.image}" alt="${event.title}" class="w-full h-full object-cover">
-                  <span class="absolute top-3 left-3 ${categoryBadgeStyles[event.category] || "bg-slate-800 text-white"} text-xs px-2.5 py-1 rounded-md font-medium shadow-sm">
-                    ${event.category}
-                  </span>
-                </div>
-
-                <!-- 中間：詳細內容 -->
-                <div class="p-5 md:w-2/3 flex flex-col justify-between">
-                  <div>
-                    <p class="text-xs font-bold text-slate-400 mb-1">${event.time}</p>
-                    <h3 class="text-lg font-bold text-slate-800">${event.title}</h3>
-                    <p class="text-xs text-slate-500 mb-3">${event.subtitle}</p>
-
-                    ${event.notes.length > 0 && event.notes[0] !== "" ? `
-                      <ul class="text-xs text-slate-600 space-y-1 mb-3 list-disc list-inside bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        ${event.notes.map(note => `<li>${note.trim()}</li>`).join('')}
-                      </ul>
-                    ` : ''}
+              <article class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 mb-6">
+                <div class="flex flex-col md:flex-row">
+                  <!-- 左側：照片 -->
+                  <div class="md:w-1/3 h-48 md:h-auto relative bg-slate-200 flex-shrink-0">
+                    <img src="${event.image}" alt="${event.title}" class="w-full h-full object-cover">
+                    <span class="absolute top-3 left-3 ${categoryBadgeStyles[event.category] || "bg-slate-800 text-white"} text-xs px-2.5 py-1 rounded-md font-medium shadow-sm">
+                      ${event.category}
+                    </span>
                   </div>
 
-                  <!-- 動作按鈕：複製地址 (Grab) + 開啟 Google Maps -->
-                  <div class="flex gap-2 pt-3 mt-3 border-t border-slate-100">
-                    <button onclick="copyToClipboard('${event.address}', this)" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-md font-semibold transition flex items-center gap-1">
-                      <i class="fa-regular fa-copy"></i> 複製地址 (Grab)
-                    </button>
-                    <a href="${event.mapUrl}" target="_blank" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1">
-                      <i class="fa-solid fa-location-dot text-red-500"></i> Google Maps
-                    </a>
+                  <!-- 右側：詳細內容 -->
+                  <div class="p-5 md:w-2/3 flex flex-col justify-between flex-grow">
+                    <div>
+                      <p class="text-xs font-bold text-slate-400 mb-1">${event.time}</p>
+                      <h3 class="text-lg font-bold text-slate-800">${event.title}</h3>
+                      <p class="text-xs text-slate-500 mb-3">${event.subtitle}</p>
+
+                      ${event.notes.length > 0 && event.notes[0] !== "" ? `
+                        <ul class="text-xs text-slate-600 space-y-1 mb-3 list-disc list-inside bg-slate-50 p-3 rounded-lg border border-slate-100">
+                          ${event.notes.map(note => `<li>${note.trim()}</li>`).join('')}
+                        </ul>
+                      ` : ''}
+                    </div>
+
+                    <!-- 動作按鈕組 -->
+                    <div class="flex flex-wrap gap-2 pt-3 mt-3 border-t border-slate-100">
+                      <button onclick="copyToClipboard('${event.address}', this)" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-md font-semibold transition flex items-center gap-1">
+                        <i class="fa-regular fa-copy"></i> 複製地址 (Grab)
+                      </button>
+                      <a href="${event.mapUrl}" target="_blank" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1">
+                        <i class="fa-solid fa-location-dot text-red-500"></i> Google Maps
+                      </a>
+                      ${hasCoords ? `
+                        <button id="map-btn-${event.id}" onclick="toggleMap('${event.id}', ${event.lat}, ${event.lng}, '${safeTitle}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1">
+                          <i class="fa-solid fa-map text-amber-500"></i> 周邊 1km 地圖
+                        </button>
+                      ` : ''}
+                    </div>
                   </div>
                 </div>
 
-                <!-- 右側/下方：地圖區域 -->
-                ${event.lat && event.lng ? `
-                  <div class="md:w-1/3 h-48 md:h-auto border-t md:border-t-0 md:border-l border-slate-100 relative">
-                    <div id="map-${event.id}" class="w-full h-full min-h-[180px]"></div>
+                <!-- 動態展開地圖區域 -->
+                ${hasCoords ? `
+                  <div id="map-container-${event.id}" class="hidden border-t border-slate-100 bg-slate-50 p-3">
+                    <div id="map-${event.id}" class="w-full h-56 rounded-lg shadow-inner"></div>
                   </div>
                 ` : ''}
               </article>
@@ -302,33 +358,6 @@
         `;
 
         itineraryContainer.appendChild(section);
-      });
-    }
-
-    // 初始化 1 公里地圖區域
-    function initLeafletMaps() {
-      allEventsList.forEach(event => {
-        const mapContainer = document.getElementById(`map-${event.id}`);
-        if (!mapContainer) return;
-
-        const map = L.map(`map-${event.id}`, {
-          attributionControl: false,
-          zoomControl: false
-        }).setView([event.lat, event.lng], 14);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 18
-        }).addTo(map);
-
-        L.circle([event.lat, event.lng], {
-          color: '#f59e0b',
-          fillColor: '#f59e0b',
-          fillOpacity: 0.15,
-          radius: 1000
-        }).addTo(map);
-
-        L.marker([event.lat, event.lng]).addTo(map)
-          .bindPopup(`<b>${event.title}</b>`).openPopup();
       });
     }
 
