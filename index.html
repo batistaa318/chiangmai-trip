@@ -1,133 +1,259 @@
-<script>
-  // 💡 請在此處貼上你的 Apps Script Web App 網址
-  const API_URL = "https://script.google.com/macros/s/AKfycbwP45SIT0FQvb2sziA2y2fkhFxIzjsVwrWY0JwaOBCUG7k6w4PuJpEEkt6ks66eYkd0SA/exec";
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026清邁兄弟之旅</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome 圖示庫 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* 隱藏原生滾動條，確保天數選單美觀 */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased pb-20">
 
-  const categoryBadgeStyles = {
-    "交通": "bg-slate-900/80 text-white",
-    "景點": "bg-emerald-600 text-white",
-    "美食": "bg-amber-500 text-white",
-    "購物": "bg-purple-600 text-white",
-    "放鬆": "bg-sky-600 text-white"
-  };
+  <!-- 1. 頂部導覽列 -->
+  <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+      <span class="font-bold text-lg tracking-wide">Chiang Mai 2026</span>
+      <div class="flex space-x-2">
+        <button onclick="window.print()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-full border border-slate-700 transition">
+          <i class="fa-solid fa-download mr-1"></i> 列印/儲存PDF
+        </button>
+      </div>
+    </div>
+  </header>
 
-  // 預設 9 天基本結構
-  const defaultDays = [
-    { dayId: "day-1", dayLabel: "D1", date: "10/09", fullDate: "10/09 (五)", title: "行程規劃中" },
-    { dayId: "day-2", dayLabel: "D2", date: "10/10", fullDate: "10/10 (六)", title: "行程規劃中" },
-    { dayId: "day-3", dayLabel: "D3", date: "10/11", fullDate: "10/11 (日)", title: "行程規劃中" },
-    { dayId: "day-4", dayLabel: "D4", date: "10/12", fullDate: "10/12 (一)", title: "行程規劃中" },
-    { dayId: "day-5", dayLabel: "D5", date: "10/13", fullDate: "10/13 (二)", title: "行程規劃中" },
-    { dayId: "day-6", dayLabel: "D6", date: "10/14", fullDate: "10/14 (三)", title: "行程規劃中" },
-    { dayId: "day-7", dayLabel: "D7", date: "10/15", fullDate: "10/15 (四)", title: "行程規劃中" },
-    { dayId: "day-8", dayLabel: "D8", date: "10/16", fullDate: "10/16 (五)", title: "行程規劃中" },
-    { dayId: "day-9", dayLabel: "D9", date: "10/17", fullDate: "10/17 (六)", title: "行程規劃中" }
-  ];
+  <!-- 2. 主標題視覺區 (Hero) -->
+  <section class="bg-gradient-to-b from-slate-900 to-slate-800 text-white py-10 px-4 text-center">
+    <div class="max-w-3xl mx-auto">
+      <p class="text-amber-400 font-semibold tracking-widest text-sm uppercase mb-2">BROTHERS TRIP · 2大人 · 9天8夜</p>
+      <h1 class="text-3xl sm:text-4xl font-extrabold mb-3">2026清邁兄弟之旅</h1>
+      <p class="text-slate-300 text-sm sm:text-base">2026 / 10 / 09 — 10 / 17 · 泰國清邁</p>
+      
+      <div class="flex flex-wrap justify-center gap-2 mt-6 text-xs text-slate-300">
+        <span class="bg-slate-800/80 px-3 py-1 rounded-full border border-slate-700">市區 Grab / 雙條車</span>
+        <span class="bg-slate-800/80 px-3 py-1 rounded-full border border-slate-700">每人托運 23kg</span>
+      </div>
+    </div>
+  </section>
 
-  async function fetchAndRenderItinerary() {
-    try {
-      const response = await fetch(API_URL);
-      const rawData = await response.json();
+  <!-- 3. 航班與住宿摘要卡片 -->
+  <section class="max-w-4xl mx-auto px-4 -mt-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      
+      <!-- 去程航班 -->
+      <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-100">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">去程 OUTBOUND</span>
+        </div>
+        <h3 class="text-xl font-bold text-slate-800">CI851</h3>
+        <p class="text-sm text-slate-600 mt-1">10/09 07:30 → 10:20</p>
+        <p class="text-xs text-slate-400 mb-4">TPE T1 → CNX</p>
+        <a href="https://www.china-airlines.com/" target="_blank" class="block text-center text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 rounded-lg font-medium transition">
+          航班動態
+        </a>
+      </div>
 
-      // 將平鋪的 Sheet 資料按 DayId 分組轉換
-      const daysMap = {};
-      defaultDays.forEach(d => {
-        daysMap[d.dayId] = { ...d, events: [] };
-      });
+      <!-- 回程航班 -->
+      <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-100">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-sky-600 bg-sky-50 px-2.5 py-0.5 rounded-full">回程 RETURN</span>
+        </div>
+        <h3 class="text-xl font-bold text-slate-800">CI852</h3>
+        <p class="text-sm text-slate-600 mt-1">10/17 11:20 → 16:00</p>
+        <p class="text-xs text-slate-400 mb-4">CNX → TPE T1</p>
+        <a href="https://www.china-airlines.com/" target="_blank" class="block text-center text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 rounded-lg font-medium transition">
+          線上報到
+        </a>
+      </div>
 
-      rawData.forEach(row => {
-        const dayKey = row.DayId || row.dayId;
-        if (daysMap[dayKey]) {
-          if (row.DayTitle) daysMap[dayKey].title = row.DayTitle;
-          
-          daysMap[dayKey].events.push({
-            time: row.Time || "",
-            category: row.Category || "景點",
-            title: row.Title || "未命名行程",
-            subtitle: row.Subtitle || "",
-            image: row.Image || "https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=600&q=80",
-            notes: row.Notes ? row.Notes.split(';') : [],
-            mapUrl: row.MapUrl || "https://maps.google.com"
+      <!-- 住宿資訊 -->
+      <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-100">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full">住宿 STAY</span>
+        </div>
+        <h3 class="text-base font-bold text-slate-800 truncate">Art Mai Gallery Hotel</h3>
+        <p class="text-xs text-slate-500 mt-1 mb-3">清邁阿特邁畫廊飯店 (寧曼路)</p>
+        <div class="flex gap-2">
+          <a href="https://www.google.com/maps/search/?api=1&query=Art+Mai+Gallery+Chiang+Mai+Hotel" target="_blank" class="flex-1 text-center text-xs bg-amber-500 hover:bg-amber-600 text-white py-1.5 rounded-lg font-medium transition">
+            開啟地圖
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 4. 動態天數導覽頁籤 -->
+  <nav class="sticky top-12 z-40 bg-white/90 backdrop-blur border-b border-slate-200 py-2 my-8 shadow-sm">
+    <div id="day-nav-container" class="max-w-4xl mx-auto px-4 flex space-x-2 overflow-x-auto no-scrollbar">
+      <!-- JavaScript 將在此動態生成 D1 ~ D9 導覽頁籤 -->
+    </div>
+  </nav>
+
+  <!-- 5. 行程卡片區塊 -->
+  <main id="itinerary-container" class="max-w-4xl mx-auto px-4 space-y-10">
+    <!-- 載入中動畫提示 -->
+    <div id="loading-spinner" class="text-center py-12">
+      <i class="fa-solid fa-circle-notch fa-spin text-3xl text-slate-400"></i>
+      <p class="text-sm text-slate-500 mt-3 font-medium">正在讀取最新的試算表行程資料...</p>
+    </div>
+  </main>
+
+  <!-- 6. 動態抓取 API 與渲染腳本 -->
+  <script>
+    // 串接你的 Apps Script URL
+    const API_URL = "https://script.google.com/macros/s/AKfycbwP45SIT0FQvb2sziA2y2fkhFxIzjsVwrWY0JwaOBCUG7k6w4PuJpEEkt6ks66eYkd0SA/exec";
+
+    // 類別標籤樣式設定
+    const categoryBadgeStyles = {
+      "交通": "bg-slate-900/80 text-white",
+      "景點": "bg-emerald-600 text-white",
+      "美食": "bg-amber-500 text-white",
+      "購物": "bg-purple-600 text-white",
+      "放鬆": "bg-sky-600 text-white"
+    };
+
+    // 預設 9 天基本日期對照表
+    const defaultDays = [
+      { dayId: "day-1", dayLabel: "D1", date: "10/09", fullDate: "10/09 (五)", title: "行程規劃中" },
+      { dayId: "day-2", dayLabel: "D2", date: "10/10", fullDate: "10/10 (六)", title: "行程規劃中" },
+      { dayId: "day-3", dayLabel: "D3", date: "10/11", fullDate: "10/11 (日)", title: "行程規劃中" },
+      { dayId: "day-4", dayLabel: "D4", date: "10/12", fullDate: "10/12 (一)", title: "行程規劃中" },
+      { dayId: "day-5", dayLabel: "D5", date: "10/13", fullDate: "10/13 (二)", title: "行程規劃中" },
+      { dayId: "day-6", dayLabel: "D6", date: "10/14", fullDate: "10/14 (三)", title: "行程規劃中" },
+      { dayId: "day-7", dayLabel: "D7", date: "10/15", fullDate: "10/15 (四)", title: "行程規劃中" },
+      { dayId: "day-8", dayLabel: "D8", date: "10/16", fullDate: "10/16 (五)", title: "行程規劃中" },
+      { dayId: "day-9", dayLabel: "D9", date: "10/17", fullDate: "10/17 (六)", title: "行程規劃中" }
+    ];
+
+    async function fetchAndRenderItinerary() {
+      const container = document.getElementById("itinerary-container");
+      
+      try {
+        const response = await fetch(API_URL);
+        const rawData = await response.json();
+
+        // 建立資料對映 Map
+        const daysMap = {};
+        defaultDays.forEach(d => {
+          daysMap[d.dayId] = { ...d, events: [] };
+        });
+
+        // 解析 API 傳回的列表並分組至各個天數
+        if (Array.isArray(rawData)) {
+          rawData.forEach(row => {
+            const dayKey = (row.DayId || row.dayId || "").toString().toLowerCase().trim();
+            if (daysMap[dayKey]) {
+              if (row.DayTitle) daysMap[dayKey].title = row.DayTitle;
+              
+              daysMap[dayKey].events.push({
+                time: row.Time || "",
+                category: row.Category || "景點",
+                title: row.Title || "未命名行程",
+                subtitle: row.Subtitle || "",
+                image: row.Image || "https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=600&q=80",
+                notes: row.Notes ? row.Notes.toString().split(';') : [],
+                mapUrl: row.MapUrl || "https://maps.google.com"
+              });
+            }
           });
         }
-      });
 
-      renderUI(Object.values(daysMap));
-    } catch (error) {
-      console.error("載入行程資料失敗:", error);
-    }
-  }
-
-  function renderUI(itineraryData) {
-    const navContainer = document.getElementById("day-nav-container");
-    const itineraryContainer = document.getElementById("itinerary-container");
-
-    navContainer.innerHTML = "";
-    itineraryContainer.innerHTML = "";
-
-    itineraryData.forEach((day, index) => {
-      // 1. 渲染頂部導覽列按鈕
-      const navBtn = document.createElement("a");
-      navBtn.href = `#${day.dayId}`;
-      navBtn.className = `flex-shrink-0 px-4 py-2 rounded-lg text-xs text-center font-bold transition ${
-        index === 0 ? "bg-slate-900 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-      }`;
-      navBtn.innerHTML = `${day.dayLabel}<span class="block font-normal text-[10px] ${index === 0 ? "opacity-80" : "text-slate-500"}">${day.date}</span>`;
-      navContainer.appendChild(navBtn);
-
-      // 2. 渲染每日行程卡片
-      const section = document.createElement("section");
-      section.id = day.dayId;
-      section.className = "scroll-mt-28";
-
-      let eventsHtml = "";
-      if (day.events.length === 0) {
-        eventsHtml = `
-          <div class="bg-white p-6 rounded-xl border border-dashed border-slate-300 text-center text-slate-400 text-sm">
-            <i class="fa-solid fa-pen-to-square mr-1"></i> 行程規劃中...
+        renderUI(Object.values(daysMap));
+      } catch (error) {
+        console.error("載入行程資料失敗:", error);
+        container.innerHTML = `
+          <div class="bg-red-50 text-red-600 p-6 rounded-xl border border-red-200 text-center text-sm">
+            <i class="fa-solid fa-triangle-exclamation mr-1"></i> 無法載入 Google Sheet 資料，請確認 API 存取權限是否已設定為「任何人」。
           </div>
         `;
-      } else {
-        eventsHtml = day.events.map(event => `
-          <article class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col md:flex-row mb-4">
-            <div class="md:w-1/3 h-48 md:h-auto relative bg-slate-200">
-              <img src="${event.image}" alt="${event.title}" class="w-full h-full object-cover">
-              <span class="absolute top-3 left-3 ${categoryBadgeStyles[event.category] || "bg-slate-800 text-white"} text-xs px-2.5 py-1 rounded-md font-medium">
-                ${event.category}
-              </span>
-            </div>
-            <div class="p-5 md:w-2/3 flex flex-col justify-between">
-              <div>
-                <p class="text-xs font-bold text-slate-400 mb-1">${event.time}</p>
-                <h3 class="text-lg font-bold text-slate-800">${event.title}</h3>
-                <p class="text-xs text-slate-500 mb-3">${event.subtitle}</p>
-                ${event.notes.length > 0 ? `
-                  <ul class="text-xs text-slate-600 space-y-1 mb-4 list-disc list-inside bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    ${event.notes.map(note => `<li>${note}</li>`).join('')}
-                  </ul>
-                ` : ''}
-              </div>
-              <div class="flex gap-2 pt-2 border-t border-slate-100">
-                <a href="${event.mapUrl}" target="_blank" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1">
-                  <i class="fa-solid fa-location-dot text-red-500"></i> Google Maps
-                </a>
-              </div>
-            </div>
-          </article>
-        `).join('');
       }
+    }
 
-      section.innerHTML = `
-        <div class="mb-4">
-          <span class="text-xs font-bold text-amber-600 tracking-wider">DAY 0${index + 1} · ${day.fullDate}</span>
-          <h2 class="text-2xl font-black text-slate-900">${day.title}</h2>
-        </div>
-        <div class="space-y-4">${eventsHtml}</div>
-      `;
+    function renderUI(itineraryData) {
+      const navContainer = document.getElementById("day-nav-container");
+      const itineraryContainer = document.getElementById("itinerary-container");
 
-      itineraryContainer.appendChild(section);
-    });
-  }
+      navContainer.innerHTML = "";
+      itineraryContainer.innerHTML = "";
 
-  // 頁面載入時自動向 API 抓取資料
-  fetchAndRenderItinerary();
-</script>
+      itineraryData.forEach((day, index) => {
+        // 1. 產生頂部固定導覽頁籤
+        const navBtn = document.createElement("a");
+        navBtn.href = `#${day.dayId}`;
+        navBtn.className = `flex-shrink-0 px-4 py-2 rounded-lg text-xs text-center font-bold transition ${
+          index === 0 ? "bg-slate-900 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+        }`;
+        navBtn.innerHTML = `${day.dayLabel}<span class="block font-normal text-[10px] ${index === 0 ? "opacity-80" : "text-slate-500"}">${day.date}</span>`;
+        navContainer.appendChild(navBtn);
+
+        // 2. 產生每日行程內容
+        const section = document.createElement("section");
+        section.id = day.dayId;
+        section.className = "scroll-mt-28";
+
+        let eventsHtml = "";
+        if (day.events.length === 0) {
+          eventsHtml = `
+            <div class="bg-white p-6 rounded-xl border border-dashed border-slate-300 text-center text-slate-400 text-sm">
+              <i class="fa-solid fa-pen-to-square mr-1"></i> 尚未新增行程，開啟 Google Sheet 即可隨時填寫！
+            </div>
+          `;
+        } else {
+          eventsHtml = day.events.map(event => `
+            <article class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col md:flex-row mb-4">
+              <div class="md:w-1/3 h-48 md:h-auto relative bg-slate-200">
+                <img src="${event.image}" alt="${event.title}" class="w-full h-full object-cover">
+                <span class="absolute top-3 left-3 ${categoryBadgeStyles[event.category] || "bg-slate-800 text-white"} text-xs px-2.5 py-1 rounded-md font-medium">
+                  ${event.category}
+                </span>
+              </div>
+              <div class="p-5 md:w-2/3 flex flex-col justify-between">
+                <div>
+                  <p class="text-xs font-bold text-slate-400 mb-1">${event.time}</p>
+                  <h3 class="text-lg font-bold text-slate-800">${event.title}</h3>
+                  <p class="text-xs text-slate-500 mb-3">${event.subtitle}</p>
+                  ${event.notes.length > 0 && event.notes[0] !== "" ? `
+                    <ul class="text-xs text-slate-600 space-y-1 mb-4 list-disc list-inside bg-slate-50 p-3 rounded-lg border border-slate-100">
+                      ${event.notes.map(note => `<li>${note.trim()}</li>`).join('')}
+                    </ul>
+                  ` : ''}
+                </div>
+                <div class="flex gap-2 pt-2 border-t border-slate-100">
+                  <a href="${event.mapUrl}" target="_blank" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1">
+                    <i class="fa-solid fa-location-dot text-red-500"></i> Google Maps
+                  </a>
+                </div>
+              </div>
+            </article>
+          `).join('');
+        }
+
+        section.innerHTML = `
+          <div class="mb-4">
+            <span class="text-xs font-bold text-amber-600 tracking-wider">DAY 0${index + 1} · ${day.fullDate}</span>
+            <h2 class="text-2xl font-black text-slate-900">${day.title}</h2>
+          </div>
+          <div class="space-y-4">${eventsHtml}</div>
+        `;
+
+        itineraryContainer.appendChild(section);
+      });
+    }
+
+    // 初始化自動呼叫 API
+    fetchAndRenderItinerary();
+  </script>
+</body>
+</html>
