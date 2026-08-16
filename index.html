@@ -33,22 +33,31 @@
     </div>
   </header>
 
-  <!-- 2. 主標題視覺區 (Hero) -->
-  <section class="bg-gradient-to-b from-slate-900 to-slate-800 text-white py-10 px-4 text-center">
-    <div class="max-w-3xl mx-auto">
+  <!-- 2. 主標題視覺區 (包含背景圖片與倒數計時卡片) -->
+  <section class="relative bg-cover bg-center text-white py-14 px-4 text-center" 
+           style="background-image: url('https://lixiaoyu.tw/wp-content/uploads/20190725165714_69.jpg');">
+    <!-- 深色遮罩（可調整 opacity 改變明亮程度，例如 bg-slate-900/60） -->
+    <div class="absolute inset-0 bg-slate-900/70"></div>
+
+    <div class="relative z-10 max-w-3xl mx-auto">
+      <!-- 倒數計時標籤 -->
+      <div class="inline-block bg-amber-500/90 backdrop-blur-md text-slate-950 font-extrabold text-xs px-3 py-1 rounded-full mb-3 shadow-lg">
+        <i class="fa-regular fa-clock mr-1"></i> <span id="countdown-text">計算倒數中...</span>
+      </div>
+
       <p class="text-amber-400 font-semibold tracking-widest text-sm uppercase mb-2">BROTHERS TRIP · 2大人 · 9天8夜</p>
       <h1 class="text-3xl sm:text-4xl font-extrabold mb-3">2026清邁兄弟之旅</h1>
       <p class="text-slate-300 text-sm sm:text-base">2026 / 10 / 09 — 10 / 17 · 泰國清邁</p>
       
       <div class="flex flex-wrap justify-center gap-2 mt-6 text-xs text-slate-300">
-        <span class="bg-slate-800/80 px-3 py-1 rounded-full border border-slate-700">市區 Grab / 雙條車</span>
-        <span class="bg-slate-800/80 px-3 py-1 rounded-full border border-slate-700">每人托運 23kg</span>
+        <span class="bg-slate-800/80 backdrop-blur px-3 py-1 rounded-full border border-slate-700">市區 Grab / 雙條車</span>
+        <span class="bg-slate-800/80 backdrop-blur px-3 py-1 rounded-full border border-slate-700">每人托運 23kg</span>
       </div>
     </div>
   </section>
 
   <!-- 3. 航班與住宿摘要卡片 -->
-  <section class="max-w-4xl mx-auto px-4 -mt-6">
+  <section class="max-w-4xl mx-auto px-4 -mt-6 relative z-20">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       
       <!-- 去程航班 -->
@@ -97,25 +106,46 @@
   <!-- 4. 動態天數導覽頁籤 -->
   <nav class="sticky top-12 z-40 bg-white/90 backdrop-blur border-b border-slate-200 py-2 my-8 shadow-sm">
     <div id="day-nav-container" class="max-w-4xl mx-auto px-4 flex space-x-2 overflow-x-auto no-scrollbar">
-      <!-- JavaScript 將在此動態生成 D1 ~ D9 導覽頁籤 -->
     </div>
   </nav>
 
   <!-- 5. 行程卡片區塊 -->
   <main id="itinerary-container" class="max-w-4xl mx-auto px-4 space-y-10">
-    <!-- 載入中動畫提示 -->
     <div id="loading-spinner" class="text-center py-12">
       <i class="fa-solid fa-circle-notch fa-spin text-3xl text-slate-400"></i>
       <p class="text-sm text-slate-500 mt-3 font-medium">正在讀取最新的試算表行程資料...</p>
     </div>
   </main>
 
-  <!-- 6. 動態抓取 API 與渲染腳本 -->
+  <!-- 6. 動態腳本 (API + 倒數計算) -->
   <script>
-    // 串接你的 Apps Script URL
     const API_URL = "https://script.google.com/macros/s/AKfycbwP45SIT0FQvb2sziA2y2fkhFxIzjsVwrWY0JwaOBCUG7k6w4PuJpEEkt6ks66eYkd0SA/exec";
 
-    // 類別標籤樣式設定
+    // 計算出發倒數天數
+    function updateCountdown() {
+      const startDate = new Date('2026-10-09T00:00:00');
+      const endDate = new Date('2026-10-17T23:59:59');
+      const today = new Date();
+      
+      // 去除時分秒差異
+      today.setHours(0, 0, 0, 0);
+      startDate.setHours(0, 0, 0, 0);
+
+      const diffTime = startDate - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      const countdownEl = document.getElementById('countdown-text');
+
+      if (diffDays > 0) {
+        countdownEl.innerText = `距離出發還有 ${diffDays} 天`;
+      } else if (diffDays <= 0 && today <= endDate) {
+        const currentDay = Math.abs(diffDays) + 1;
+        countdownEl.innerText = `清邁之旅進行中！第 ${currentDay} 天`;
+      } else {
+        countdownEl.innerText = `旅程已圓滿結束`;
+      }
+    }
+
     const categoryBadgeStyles = {
       "交通": "bg-slate-900/80 text-white",
       "景點": "bg-emerald-600 text-white",
@@ -124,7 +154,6 @@
       "放鬆": "bg-sky-600 text-white"
     };
 
-    // 預設 9 天基本日期對照表
     const defaultDays = [
       { dayId: "day-1", dayLabel: "D1", date: "10/09", fullDate: "10/09 (五)", title: "行程規劃中" },
       { dayId: "day-2", dayLabel: "D2", date: "10/10", fullDate: "10/10 (六)", title: "行程規劃中" },
@@ -144,13 +173,11 @@
         const response = await fetch(API_URL);
         const rawData = await response.json();
 
-        // 建立資料對映 Map
         const daysMap = {};
         defaultDays.forEach(d => {
           daysMap[d.dayId] = { ...d, events: [] };
         });
 
-        // 解析 API 傳回的列表並分組至各個天數
         if (Array.isArray(rawData)) {
           rawData.forEach(row => {
             const dayKey = (row.DayId || row.dayId || "").toString().toLowerCase().trim();
@@ -175,7 +202,7 @@
         console.error("載入行程資料失敗:", error);
         container.innerHTML = `
           <div class="bg-red-50 text-red-600 p-6 rounded-xl border border-red-200 text-center text-sm">
-            <i class="fa-solid fa-triangle-exclamation mr-1"></i> 無法載入 Google Sheet 資料，請確認 API 存取權限是否已設定為「任何人」。
+            <i class="fa-solid fa-triangle-exclamation mr-1"></i> 無法載入 Google Sheet 資料，請確認 API 存取權限。
           </div>
         `;
       }
@@ -189,7 +216,6 @@
       itineraryContainer.innerHTML = "";
 
       itineraryData.forEach((day, index) => {
-        // 1. 產生頂部固定導覽頁籤
         const navBtn = document.createElement("a");
         navBtn.href = `#${day.dayId}`;
         navBtn.className = `flex-shrink-0 px-4 py-2 rounded-lg text-xs text-center font-bold transition ${
@@ -198,7 +224,6 @@
         navBtn.innerHTML = `${day.dayLabel}<span class="block font-normal text-[10px] ${index === 0 ? "opacity-80" : "text-slate-500"}">${day.date}</span>`;
         navContainer.appendChild(navBtn);
 
-        // 2. 產生每日行程內容
         const section = document.createElement("section");
         section.id = day.dayId;
         section.className = "scroll-mt-28";
@@ -252,7 +277,8 @@
       });
     }
 
-    // 初始化自動呼叫 API
+    // 初始化
+    updateCountdown();
     fetchAndRenderItinerary();
   </script>
 </body>
