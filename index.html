@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>2026清邁兄弟之旅</title>
+
+  <!-- PWA 設定 (讓手機可以新增至主畫面離線使用) -->
+  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIjIwMjYg4LmA4LiK4Li14Lii4LmJ4LiZ4Lij4LmI4LmA4LiB4LiiIiwKICAic2hvcnRfbmFtZSI6ICIyMDI24LmA4LiK4Li14LiiIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwZjE3MmEiLAogICJ0aGVtZV9jb2xvciI6ICIjMGYxNzJhIgp9">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome 圖示庫 -->
@@ -34,7 +41,7 @@
     </div>
   </header>
 
-  <!-- 2. 主標題視覺區 (已更新背景圖片) -->
+  <!-- 2. 主標題視覺區 -->
   <section class="relative bg-cover bg-center text-white py-14 px-4 text-center" 
            style="background-image: url('https://lixiaoyu.tw/wp-content/uploads/20190725165714_69.jpg');">
     <div class="absolute inset-0 bg-slate-900/70"></div>
@@ -55,8 +62,54 @@
     </div>
   </section>
 
+  <!-- 🌟 新增小工具區塊：天氣預報與匯率換算 -->
+  <section class="max-w-4xl mx-auto px-4 -mt-6 relative z-20 mb-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      
+      <!-- 清邁未來 5 小時降雨預報 -->
+      <div class="bg-slate-900 text-white p-4 rounded-xl shadow-lg border border-slate-800">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-amber-400 flex items-center gap-1">
+            <i class="fa-solid fa-cloud-sun-rain"></i> 清邁即時天氣 & 降雨機率
+          </span>
+          <span id="current-temp" class="text-xs text-slate-300 font-medium">載入中...</span>
+        </div>
+
+        <div id="weather-hourly" class="grid grid-cols-5 gap-1 text-center pt-1">
+          <!-- 這裡會由 JS 自動填入未來 5 小時資料 -->
+          <div class="text-xs text-slate-400 col-span-5 py-2">正在讀取降雨預報...</div>
+        </div>
+      </div>
+
+      <!-- 泰銖即時計算機 -->
+      <div class="bg-white p-4 rounded-xl shadow-lg border border-slate-100 flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-emerald-600 flex items-center gap-1">
+            <i class="fa-solid fa-calculator"></i> 泰銖 (THB) 快速換算
+          </span>
+          <span class="text-[10px] text-slate-400">大約估算 (1 THB ≈ 0.92 TWD)</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1">
+            <input type="number" id="thb-input" placeholder="輸入泰銖" oninput="convertCurrency()"
+                   class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <span class="absolute right-2 top-2 text-xs font-bold text-slate-400">฿</span>
+          </div>
+          <span class="text-xs font-bold text-slate-400">≈</span>
+          <div class="relative flex-1">
+            <input type="text" id="twd-output" placeholder="台幣金額" readonly
+                   class="w-full bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-1.5 text-sm font-bold text-emerald-700 focus:outline-none">
+            <span class="absolute right-2 top-2 text-xs font-bold text-emerald-500">NT$</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <!-- 3. 航班與住宿摘要卡片 -->
-  <section class="max-w-4xl mx-auto px-4 -mt-6 relative z-20">
+  <section class="max-w-4xl mx-auto px-4 relative z-20">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <!-- 去程航班 -->
       <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-100">
@@ -119,11 +172,66 @@
   <!-- 6. JavaScript 邏輯 -->
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycby3lp2T_FBEQWGLrenjUW5rbmw5WyAO477YXn1Y84PRB6eo2f8Elf-CRcpK4vnB3GHpNw/exec";
-
-    // 儲存已初始化的地圖實體，避免重複建立
     const mapInstances = {};
 
-    // 複製文字功能 (Grab 複製地址用)
+    // 泰銖換算台幣 (預設 0.92 匯率)
+    function convertCurrency() {
+      const thb = parseFloat(document.getElementById('thb-input').value);
+      const twdOutput = document.getElementById('twd-output');
+      if (isNaN(thb) || thb <= 0) {
+        twdOutput.value = '';
+      } else {
+        twdOutput.value = Math.round(thb * 0.92);
+      }
+    }
+
+    // 抓取清邁天氣與未來 5 小時降雨機率
+    async function fetchChiangMaiWeather() {
+      const weatherContainer = document.getElementById('weather-hourly');
+      const tempContainer = document.getElementById('current-temp');
+
+      try {
+        // 清邁經緯度：18.7883, 98.9853
+        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=18.7883&longitude=98.9853&hourly=precipitation_probability,temperature_2m&current_weather=true&timezone=Asia%2FBangkok");
+        const data = await response.json();
+
+        // 顯示目前氣溫
+        if (data.current_weather) {
+          tempContainer.innerText = `目前 ${Math.round(data.current_weather.temperature)}°C`;
+        }
+
+        // 計算當前時間對應的 index
+        const now = new Date();
+        const currentHour = now.getHours();
+        
+        let html = '';
+        for (let i = 0; i < 5; i++) {
+          const targetHour = (currentHour + i) % 24;
+          const prob = data.hourly.precipitation_probability[i] || 0;
+
+          // 降雨顏色邏輯
+          let rainColor = "text-slate-300";
+          if (prob >= 50) rainColor = "text-blue-400 font-bold";
+          else if (prob >= 20) rainColor = "text-amber-300";
+
+          html += `
+            <div class="bg-slate-800/60 p-1.5 rounded-lg border border-slate-700/50">
+              <div class="text-[10px] text-slate-400">${targetHour}:00</div>
+              <div class="text-xs ${rainColor} mt-0.5">
+                <i class="fa-solid fa-umbrella text-[10px]"></i> ${prob}%
+              </div>
+            </div>
+          `;
+        }
+        weatherContainer.innerHTML = html;
+
+      } catch (err) {
+        console.error("天氣載入失敗:", err);
+        weatherContainer.innerHTML = `<div class="text-xs text-slate-500 col-span-5 py-1">無法載入天氣資訊</div>`;
+      }
+    }
+
+    // 複製文字功能
     function copyToClipboard(text, btnElement) {
       navigator.clipboard.writeText(text).then(() => {
         const originalText = btnElement.innerHTML;
@@ -144,43 +252,22 @@
       if (!container) return;
 
       if (container.classList.contains('hidden')) {
-        // 顯示地圖容器
         container.classList.remove('hidden');
         btn.classList.add('bg-amber-100', 'text-amber-800');
 
-        // 如果該地圖尚未建立過，進行初始化
         if (!mapInstances[eventId]) {
-          const map = L.map(`map-${eventId}`, {
-            attributionControl: false,
-            zoomControl: true
-          }).setView([lat, lng], 14);
-
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 18
-          }).addTo(map);
-
-          L.circle([lat, lng], {
-            color: '#f59e0b',
-            fillColor: '#f59e0b',
-            fillOpacity: 0.15,
-            radius: 1000
-          }).addTo(map);
-
-          L.marker([lat, lng]).addTo(map)
-            .bindPopup(`<b>${title}</b>`).openPopup();
-
+          const map = L.map(`map-${eventId}`, { attributionControl: false, zoomControl: true }).setView([lat, lng], 14);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+          L.circle([lat, lng], { color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.15, radius: 1000 }).addTo(map);
+          L.marker([lat, lng]).addTo(map).bindPopup(`<b>${title}</b>`).openPopup();
           mapInstances[eventId] = map;
         }
 
-        // 解決隱藏容器重新顯示後 Leaflet 尺寸未更新問題
         setTimeout(() => {
-          if (mapInstances[eventId]) {
-            mapInstances[eventId].invalidateSize();
-          }
+          if (mapInstances[eventId]) mapInstances[eventId].invalidateSize();
         }, 200);
 
       } else {
-        // 隱藏地圖容器
         container.classList.add('hidden');
         btn.classList.remove('bg-amber-100', 'text-amber-800');
       }
@@ -299,7 +386,6 @@
             return `
               <article class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 mb-6">
                 <div class="flex flex-col md:flex-row">
-                  <!-- 左側：照片 -->
                   <div class="md:w-1/3 h-48 md:h-auto relative bg-slate-200 flex-shrink-0">
                     <img src="${event.image}" alt="${event.title}" class="w-full h-full object-cover">
                     <span class="absolute top-3 left-3 ${categoryBadgeStyles[event.category] || "bg-slate-800 text-white"} text-xs px-2.5 py-1 rounded-md font-medium shadow-sm">
@@ -307,7 +393,6 @@
                     </span>
                   </div>
 
-                  <!-- 右側：詳細內容 -->
                   <div class="p-5 md:w-2/3 flex flex-col justify-between flex-grow">
                     <div>
                       <p class="text-xs font-bold text-slate-400 mb-1">${event.time}</p>
@@ -321,7 +406,6 @@
                       ` : ''}
                     </div>
 
-                    <!-- 動作按鈕組 -->
                     <div class="flex flex-wrap gap-2 pt-3 mt-3 border-t border-slate-100">
                       <button onclick="copyToClipboard('${event.address}', this)" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-md font-semibold transition flex items-center gap-1">
                         <i class="fa-regular fa-copy"></i> 複製地址 (Grab)
@@ -338,7 +422,6 @@
                   </div>
                 </div>
 
-                <!-- 動態展開地圖區域 -->
                 ${hasCoords ? `
                   <div id="map-container-${event.id}" class="hidden border-t border-slate-100 bg-slate-50 p-3">
                     <div id="map-${event.id}" class="w-full h-56 rounded-lg shadow-inner"></div>
@@ -361,7 +444,9 @@
       });
     }
 
+    // 初始化呼叫
     updateCountdown();
+    fetchChiangMaiWeather();
     fetchAndRenderItinerary();
   </script>
 </body>
