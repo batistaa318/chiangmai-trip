@@ -62,21 +62,21 @@
     </div>
   </section>
 
-  <!-- 3. 天氣預報與匯率換算工具 -->
+  <!-- 3. 天氣預報 (恢復五小時內預報) 與匯率換算工具 -->
   <section class="max-w-4xl mx-auto px-4 -mt-6 relative z-20 mb-4">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       
-      <!-- 7 天天氣預報 -->
+      <!-- 清邁 5 小時內即時天氣預報 -->
       <div class="bg-slate-900 text-white p-4 rounded-xl shadow-lg border border-slate-800">
         <div class="flex justify-between items-center mb-2">
           <span class="text-xs font-bold text-amber-400 flex items-center gap-1">
-            <i class="fa-solid fa-cloud-sun-rain"></i> 清邁未來 7 天天氣預報
+            <i class="fa-solid fa-cloud-sun-rain"></i> 清邁未來 5 小時天氣預報
           </span>
           <span id="current-temp" class="text-xs text-slate-300 font-medium">載入中...</span>
         </div>
 
-        <div id="weather-daily" class="flex space-x-2 overflow-x-auto no-scrollbar pt-1 pb-1">
-          <div class="text-xs text-slate-400 py-2">正在讀取 7 天預報...</div>
+        <div id="weather-hourly" class="flex space-x-2 overflow-x-auto no-scrollbar pt-1 pb-1">
+          <div class="text-xs text-slate-400 py-2">正在讀取小時天氣...</div>
         </div>
       </div>
 
@@ -169,7 +169,7 @@
     </div>
   </section>
 
-  <!-- 5. 動態天數導覽頁籤 -->
+  <!-- 5. 動態天數導覽頁籤 (天數頁籤融合每日天氣資訊) -->
   <nav class="sticky top-12 z-40 bg-white/90 backdrop-blur border-b border-slate-200 py-2 my-8 shadow-sm">
     <div id="day-nav-container" class="max-w-4xl mx-auto px-4 flex space-x-2 overflow-x-auto no-scrollbar"></div>
   </nav>
@@ -187,6 +187,7 @@
     const API_URL = "https://script.google.com/macros/s/AKfycby3lp2T_FBEQWGLrenjUW5rbmw5WyAO477YXn1Y84PRB6eo2f8Elf-CRcpK4vnB3GHpNw/exec";
     const mapInstances = {};
     let thbToTwdRate = 0.92;
+    let dailyWeatherData = {}; // 儲存每日預報資料
 
     // 🔊 泰語語音朗讀功能 (Web Speech API)
     function speakThai(text, btnElement) {
@@ -194,30 +195,93 @@
         alert('您的瀏覽器不支援語音朗讀功能');
         return;
       }
-
-      // 停止先前正在播放的語音
       window.speechSynthesis.cancel();
-
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'th-TH'; // 設定為泰語發音
-      utterance.rate = 0.9;     // 稍微放慢速度，確保聽得清楚
+      utterance.lang = 'th-TH';
+      utterance.rate = 0.9;
 
-      // 播放時按鈕視覺反饋
       const originalHtml = btnElement.innerHTML;
       btnElement.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xs"></i>`;
       btnElement.classList.add('bg-emerald-500');
 
-      utterance.onend = function() {
-        btnElement.innerHTML = originalHtml;
-        btnElement.classList.remove('bg-emerald-500');
-      };
-
-      utterance.onerror = function() {
-        btnElement.innerHTML = originalHtml;
-        btnElement.classList.remove('bg-emerald-500');
-      };
+      utterance.onend = () => { btnElement.innerHTML = originalHtml; btnElement.classList.remove('bg-emerald-500'); };
+      utterance.onerror = () => { btnElement.innerHTML = originalHtml; btnElement.classList.remove('bg-emerald-500'); };
 
       window.speechSynthesis.speak(utterance);
+    }
+
+    // 根據 WMO 天氣代碼與降雨機率傳回 FontAwesome 圖示與顏色
+    function getWeatherIcon(weatherCode, rainProb) {
+      // WMO 天氣代碼判斷
+      if (weatherCode === 0) return { icon: "fa-sun", color: "text-amber-500" }; // 晴天
+      if (weatherCode >= 1 && weatherCode <= 3) return { icon: "fa-cloud-sun", color: "text-amber-400" }; // 多雲
+      if (weatherCode >= 95) return { icon: "fa-cloud-bolt", color: "text-purple-500" }; // 雷陣雨
+      if (weatherCode >= 61 && weatherCode <= 67) return { icon: "fa-cloud-showers-heavy", color: "text-blue-600" }; // 大雨/暴雨
+      if (weatherCode >= 51 && weatherCode <= 55) return { icon: "fa-cloud-rain", color: "text-blue-400" }; // 小雨
+      
+      // 根據降雨機率備用判斷
+      if (rainProb >= 70) return { icon: "fa-cloud-showers-heavy", color: "text-blue-600" };
+      if (rainProb >= 40) return { icon: "fa-cloud-rain", color: "text-blue-400" };
+      if (rainProb >= 20) return { icon: "fa-cloud-sun", color: "text-amber-400" };
+      return { icon: "fa-sun", color: "text-amber-500" };
+    }
+
+    // 抓取清邁即時與每日天氣 API
+    async function fetchChiangMaiWeather() {
+      const weatherContainer = document.getElementById('weather-hourly');
+      const tempContainer = document.getElementById('current-temp');
+
+      try {
+        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=18.7883&longitude=98.9853&hourly=temperature_2m,precipitation_probability,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&current_weather=true&timezone=Asia%2FBangkok");
+        const data = await response.json();
+
+        // 1. 更新目前溫度與 5 小時內天氣
+        if (data.current_weather) {
+          tempContainer.innerText = `目前 ${Math.round(data.current_weather.temperature)}°C`;
+        }
+
+        if (data.hourly && data.hourly.time) {
+          const currentHour = new Date().getHours();
+          let hourlyHtml = '';
+          for (let i = currentHour; i < currentHour + 5 && i < data.hourly.time.length; i++) {
+            const hourLabel = `${data.hourly.time[i].substring(11, 13)}:00`;
+            const temp = Math.round(data.hourly.temperature_2m[i]);
+            const rainProb = data.hourly.precipitation_probability[i] || 0;
+            const code = data.hourly.weathercode[i];
+            const weather = getWeatherIcon(code, rainProb);
+
+            hourlyHtml += `
+              <div class="flex-shrink-0 bg-slate-800/80 p-2 rounded-lg border border-slate-700/60 text-center w-16">
+                <div class="text-[10px] text-slate-400 font-medium">${hourLabel}</div>
+                <div class="my-1"><i class="fa-solid ${weather.icon} ${weather.color} text-sm"></i></div>
+                <div class="text-xs font-bold text-white">${temp}°C</div>
+                <div class="text-[10px] text-blue-300 font-medium">${rainProb}%</div>
+              </div>
+            `;
+          }
+          weatherContainer.innerHTML = hourlyHtml;
+        }
+
+        // 2. 儲存每日天氣資料給 D1~D9 標籤使用
+        if (data.daily && data.daily.time) {
+          for (let i = 0; i < data.daily.time.length; i++) {
+            const dateKey = data.daily.time[i]; // YYYY-MM-DD
+            dailyWeatherData[dateKey] = {
+              maxTemp: Math.round(data.daily.temperature_2m_max[i]),
+              minTemp: Math.round(data.daily.temperature_2m_min[i]),
+              rainProb: data.daily.precipitation_probability_max[i] || 0,
+              weatherCode: data.daily.weathercode[i]
+            };
+          }
+        }
+
+        // 重新渲染標籤天數
+        fetchAndRenderItinerary();
+
+      } catch (err) {
+        console.error("天氣載入失敗:", err);
+        weatherContainer.innerHTML = `<div class="text-xs text-slate-500 py-1">無法載入 5 小時預報</div>`;
+      }
     }
 
     // 抓取每日即時匯率 API
@@ -249,49 +313,6 @@
         const twd = parseFloat(twdInput.value);
         if (isNaN(twd) || twd <= 0) thbInput.value = '';
         else thbInput.value = Math.round(twd / thbToTwdRate);
-      }
-    }
-
-    // 抓取 7 天預報 API
-    async function fetchChiangMaiWeather() {
-      const weatherContainer = document.getElementById('weather-daily');
-      const tempContainer = document.getElementById('current-temp');
-
-      try {
-        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=18.7883&longitude=98.9853&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&current_weather=true&timezone=Asia%2FBangkok");
-        const data = await response.json();
-
-        if (data.current_weather) {
-          tempContainer.innerText = `目前 ${Math.round(data.current_weather.temperature)}°C`;
-        }
-
-        let html = '';
-        const days = data.daily.time;
-        for (let i = 0; i < days.length; i++) {
-          const dateStr = days[i].substring(5).replace('-', '/');
-          const maxTemp = Math.round(data.daily.temperature_2m_max[i]);
-          const minTemp = Math.round(data.daily.temperature_2m_min[i]);
-          const rainProb = data.daily.precipitation_probability_max[i] || 0;
-
-          let rainColor = "text-slate-300";
-          if (rainProb >= 50) rainColor = "text-blue-400 font-bold";
-          else if (rainProb >= 20) rainColor = "text-amber-300";
-
-          html += `
-            <div class="flex-shrink-0 bg-slate-800/80 p-2 rounded-lg border border-slate-700/60 text-center w-20">
-              <div class="text-[10px] text-slate-400 font-medium">${i === 0 ? '今天' : dateStr}</div>
-              <div class="text-xs font-bold text-white my-0.5">${minTemp}°-${maxTemp}°</div>
-              <div class="text-[11px] ${rainColor}">
-                <i class="fa-solid fa-umbrella text-[9px]"></i> ${rainProb}%
-              </div>
-            </div>
-          `;
-        }
-        weatherContainer.innerHTML = html;
-
-      } catch (err) {
-        console.error("天氣載入失敗:", err);
-        weatherContainer.innerHTML = `<div class="text-xs text-slate-500 py-1">無法載入 7 天天氣</div>`;
       }
     }
 
@@ -365,15 +386,15 @@
     };
 
     const defaultDays = [
-      { dayId: "day-1", dayLabel: "D1", date: "10/09", fullDate: "10/09 (五)", title: "行程規劃中" },
-      { dayId: "day-2", dayLabel: "D2", date: "10/10", fullDate: "10/10 (六)", title: "行程規劃中" },
-      { dayId: "day-3", dayLabel: "D3", date: "10/11", fullDate: "10/11 (日)", title: "行程規劃中" },
-      { dayId: "day-4", dayLabel: "D4", date: "10/12", fullDate: "10/12 (一)", title: "行程規劃中" },
-      { dayId: "day-5", dayLabel: "D5", date: "10/13", fullDate: "10/13 (二)", title: "行程規劃中" },
-      { dayId: "day-6", dayLabel: "D6", date: "10/14", fullDate: "10/14 (三)", title: "行程規劃中" },
-      { dayId: "day-7", dayLabel: "D7", date: "10/15", fullDate: "10/15 (四)", title: "行程規劃中" },
-      { dayId: "day-8", dayLabel: "D8", date: "10/16", fullDate: "10/16 (五)", title: "行程規劃中" },
-      { dayId: "day-9", dayLabel: "D9", date: "10/17", fullDate: "10/17 (六)", title: "行程規劃中" }
+      { dayId: "day-1", dayLabel: "D1", date: "10/09", isoDate: "2026-10-09", fullDate: "10/09 (五)", title: "行程規劃中" },
+      { dayId: "day-2", dayLabel: "D2", date: "10/10", isoDate: "2026-10-10", fullDate: "10/10 (六)", title: "行程規劃中" },
+      { dayId: "day-3", dayLabel: "D3", date: "10/11", isoDate: "2026-10-11", fullDate: "10/11 (日)", title: "行程規劃中" },
+      { dayId: "day-4", dayLabel: "D4", date: "10/12", isoDate: "2026-10-12", fullDate: "10/12 (一)", title: "行程規劃中" },
+      { dayId: "day-5", dayLabel: "D5", date: "10/13", isoDate: "2026-10-13", fullDate: "10/13 (二)", title: "行程規劃中" },
+      { dayId: "day-6", dayLabel: "D6", date: "10/14", isoDate: "2026-10-14", fullDate: "10/14 (三)", title: "行程規劃中" },
+      { dayId: "day-7", dayLabel: "D7", date: "10/15", isoDate: "2026-10-15", fullDate: "10/15 (四)", title: "行程規劃中" },
+      { dayId: "day-8", dayLabel: "D8", date: "10/16", isoDate: "2026-10-16", fullDate: "10/16 (五)", title: "行程規劃中" },
+      { dayId: "day-9", dayLabel: "D9", date: "10/17", isoDate: "2026-10-17", fullDate: "10/17 (六)", title: "行程規劃中" }
     ];
 
     async function fetchAndRenderItinerary() {
@@ -399,7 +420,7 @@
                 title: row.Title || "未命名行程",
                 subtitle: row.Subtitle || "",
                 address: row.Address || row.Title,
-                thaiName: row.ThaiName || "", // 可於試算表填寫 ThaiName
+                thaiName: row.ThaiName || "",
                 image: row.Image || "https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=600&q=80",
                 notes: row.Notes ? row.Notes.toString().split(';') : [],
                 mapUrl: row.MapUrl || "https://maps.google.com",
@@ -427,12 +448,31 @@
       itineraryContainer.innerHTML = "";
 
       itineraryData.forEach((day, index) => {
+        // 天氣圖示與氣溫邏輯 (結合標籤)
+        const wData = dailyWeatherData[day.isoDate];
+        let weatherTagHtml = '';
+        if (wData) {
+          const wInfo = getWeatherIcon(wData.weatherCode, wData.rainProb);
+          weatherTagHtml = `
+            <div class="mt-1 pt-1 border-t border-slate-200/50 flex items-center justify-center gap-1 text-[10px]">
+              <i class="fa-solid ${wInfo.icon} ${wInfo.color}"></i>
+              <span class="font-semibold text-slate-600">${wData.minTemp}°-${wData.maxTemp}°</span>
+            </div>
+          `;
+        }
+
         const navBtn = document.createElement("a");
         navBtn.href = `#${day.dayId}`;
-        navBtn.className = `flex-shrink-0 px-4 py-2 rounded-lg text-xs text-center font-bold transition ${
-          index === 0 ? "bg-slate-900 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+        navBtn.className = `flex-shrink-0 px-3 py-2 rounded-xl text-xs text-center font-bold transition shadow-sm border ${
+          index === 0 ? "bg-slate-900 text-white border-slate-900" : "bg-white hover:bg-slate-100 text-slate-800 border-slate-200"
         }`;
-        navBtn.innerHTML = `${day.dayLabel}<span class="block font-normal text-[10px] ${index === 0 ? "opacity-80" : "text-slate-500"}">${day.date}</span>`;
+        navBtn.innerHTML = `
+          <div class="flex items-center justify-center gap-1">
+            <span>${day.dayLabel}</span>
+            <span class="font-normal text-[10px] ${index === 0 ? "opacity-80" : "text-slate-500"}">${day.date}</span>
+          </div>
+          ${weatherTagHtml}
+        `;
         navContainer.appendChild(navBtn);
 
         const section = document.createElement("section");
@@ -464,7 +504,6 @@
                       <h3 class="text-lg font-bold text-slate-800">${event.title}</h3>
                       <p class="text-xs text-slate-500 mb-2">${event.subtitle}</p>
 
-                      <!-- 泰文大字區塊 (若試算表有 ThaiName 欄位則自動顯示) -->
                       ${event.thaiName ? `
                         <div class="bg-amber-50/70 border border-amber-200/60 rounded-lg p-2.5 my-2 flex justify-between items-center">
                           <div class="pr-2">
@@ -526,7 +565,6 @@
     updateCountdown();
     fetchLiveExchangeRate();
     fetchChiangMaiWeather();
-    fetchAndRenderItinerary();
   </script>
 </body>
 </html>
