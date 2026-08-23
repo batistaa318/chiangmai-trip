@@ -169,13 +169,13 @@
     </div>
   </section>
 
-  <!-- 5. 動態天數切換 Tab 標籤 -->
+  <!-- 5. 快速跳轉 Tab 導覽列 -->
   <nav class="sticky top-12 z-40 bg-white/90 backdrop-blur border-b border-slate-200 py-2 my-8 shadow-sm">
     <div id="day-nav-container" class="max-w-4xl mx-auto px-4 flex space-x-2 overflow-x-auto no-scrollbar"></div>
   </nav>
 
-  <!-- 6. 行程卡片區塊 (僅顯示目前選中的天數) -->
-  <main id="itinerary-container" class="max-w-4xl mx-auto px-4">
+  <!-- 6. 一頁式行程卡片區塊 (含收折功能) -->
+  <main id="itinerary-container" class="max-w-4xl mx-auto px-4 space-y-6">
     <div id="loading-spinner" class="text-center py-12">
       <i class="fa-solid fa-circle-notch fa-spin text-3xl text-slate-400"></i>
       <p class="text-sm text-slate-500 mt-3 font-medium">正在讀取最新的試算表行程資料...</p>
@@ -188,8 +188,6 @@
     const mapInstances = {};
     let thbToTwdRate = 0.92;
     let dailyWeatherData = {}; 
-    let globalItineraryData = []; 
-    let currentSelectedDayId = "day-1"; // 預設顯示 D1
 
     // 🔊 泰語語音朗讀功能 (Web Speech API)
     function speakThai(text, btnElement) {
@@ -394,9 +392,44 @@
       { dayId: "day-9", dayLabel: "D9", date: "10/17", isoDate: "2026-10-17", fullDate: "10/17 (六)", title: "行程規劃中" }
     ];
 
+    // 切換單日行程收折/展開 (Accordion)
+    function toggleDayAccordion(dayId, forceOpen = false) {
+      const contentEl = document.getElementById(`content-${dayId}`);
+      const iconEl = document.getElementById(`icon-${dayId}`);
+      if (!contentEl) return;
+
+      const isHidden = contentEl.classList.contains("hidden");
+
+      if (forceOpen || isHidden) {
+        contentEl.classList.remove("hidden");
+        if (iconEl) {
+          iconEl.classList.remove("fa-plus");
+          iconEl.classList.add("fa-minus");
+        }
+      } else {
+        contentEl.classList.add("hidden");
+        if (iconEl) {
+          iconEl.classList.remove("fa-minus");
+          iconEl.classList.add("fa-plus");
+        }
+      }
+    }
+
+    // 點擊頂部 Tab 時：自動展開 + 滑動到該天
+    function scrollToDayAndExpand(dayId) {
+      toggleDayAccordion(dayId, true); // 強制展開
+      const targetElement = document.getElementById(dayId);
+      if (targetElement) {
+        const yOffset = -120; // 留出 Sticky Nav 的距離
+        const y = targetElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }
+
     async function fetchAndRenderItinerary() {
       const container = document.getElementById("itinerary-container");
-      
+      const navContainer = document.getElementById("day-nav-container");
+
       try {
         const response = await fetch(API_URL);
         const rawData = await response.json();
@@ -430,154 +463,142 @@
           });
         }
 
-        globalItineraryData = Object.values(daysMap);
-        renderNavTabs();
-        renderActiveDay();
+        container.innerHTML = "";
+        navContainer.innerHTML = "";
+
+        const allDays = Object.values(daysMap);
+
+        allDays.forEach((day, index) => {
+          // 渲染頂部導覽列按鈕
+          const wData = dailyWeatherData[day.isoDate];
+          let weatherTagHtml = '';
+          if (wData) {
+            const wInfo = getWeatherIcon(wData.weatherCode, wData.rainProb);
+            weatherTagHtml = `
+              <div class="mt-1 pt-1 border-t border-slate-200/60 flex items-center justify-center gap-1 text-[10px]">
+                <i class="fa-solid ${wInfo.icon} ${wInfo.color}"></i>
+                <span class="font-semibold text-slate-600">${wData.minTemp}°-${wData.maxTemp}°</span>
+              </div>
+            `;
+          }
+
+          const navBtn = document.createElement("button");
+          navBtn.onclick = () => scrollToDayAndExpand(day.dayId);
+          navBtn.className = "flex-shrink-0 bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 px-3.5 py-2 rounded-xl text-xs text-center font-bold transition shadow-sm";
+          navBtn.innerHTML = `
+            <div class="flex items-center justify-center gap-1">
+              <span>${day.dayLabel}</span>
+              <span class="font-normal text-[10px] text-slate-500">${day.date}</span>
+            </div>
+            ${weatherTagHtml}
+          `;
+          navContainer.appendChild(navBtn);
+
+          // 預設 D1 (index === 0) 展開，其餘收折
+          const isDefaultOpen = index === 0;
+
+          // 渲染行程卡片列表
+          let eventsHtml = "";
+          if (day.events.length === 0) {
+            eventsHtml = `<div class="bg-white p-6 rounded-xl border border-dashed border-slate-300 text-center text-slate-400 text-sm">此天尚未新增行程，開啟 Google Sheet 即可隨時填寫！</div>`;
+          } else {
+            eventsHtml = day.events.map(event => {
+              const hasCoords = event.lat && event.lng;
+              const safeTitle = event.title.replace(/'/g, "\\'");
+              const safeThai = (event.thaiName || event.title).replace(/'/g, "\\'");
+
+              return `
+                <article class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 mb-4 transition hover:shadow-lg">
+                  <div class="flex flex-col md:flex-row">
+                    <div class="md:w-1/3 h-48 md:h-auto relative bg-slate-200 flex-shrink-0">
+                      <img src="${event.image}" alt="${event.title}" class="w-full h-full object-cover">
+                      <span class="absolute top-3 left-3 ${categoryBadgeStyles[event.category] || "bg-slate-800 text-white"} text-xs px-2.5 py-1 rounded-md font-medium shadow-sm">
+                        ${event.category}
+                      </span>
+                    </div>
+
+                    <div class="p-5 md:w-2/3 flex flex-col justify-between flex-grow">
+                      <div>
+                        <p class="text-xs font-bold text-slate-400 mb-1">${event.time}</p>
+                        <h3 class="text-lg font-bold text-slate-800">${event.title}</h3>
+                        <p class="text-xs text-slate-500 mb-2">${event.subtitle}</p>
+
+                        <!-- 泰文大字區塊 -->
+                        ${event.thaiName ? `
+                          <div class="bg-amber-50/70 border border-amber-200/60 rounded-lg p-2.5 my-2 flex justify-between items-center">
+                            <div class="pr-2">
+                              <span class="text-[10px] text-amber-700 font-bold block">泰文名稱：</span>
+                              <p class="text-base font-black text-slate-900 leading-tight">${event.thaiName}</p>
+                            </div>
+                            <button onclick="speakThai('${safeThai}', this)" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white p-2 rounded-full flex-shrink-0 transition shadow-sm" title="朗讀泰文">
+                              <i class="fa-solid fa-volume-high text-xs"></i>
+                            </button>
+                          </div>
+                        ` : ''}
+
+                        ${event.notes.length > 0 && event.notes[0] !== "" ? `
+                          <ul class="text-xs text-slate-600 space-y-1 mb-3 list-disc list-inside bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            ${event.notes.map(note => `<li>${note.trim()}</li>`).join('')}
+                          </ul>
+                        ` : ''}
+                      </div>
+
+                      <div class="flex flex-wrap gap-2 pt-3 mt-3 border-t border-slate-100">
+                        <button onclick="copyToClipboard('${event.address}', this)" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-md font-semibold transition flex items-center gap-1">
+                          <i class="fa-regular fa-copy"></i> 複製地址 (Grab)
+                        </button>
+                        <a href="${event.mapUrl}" target="_blank" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1">
+                          <i class="fa-solid fa-location-dot text-red-500"></i> Google Maps
+                        </a>
+                        ${hasCoords ? `
+                          <button id="map-btn-${event.id}" onclick="toggleMap('${event.id}', ${event.lat}, ${event.lng}, '${safeTitle}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1">
+                            <i class="fa-solid fa-map text-amber-500"></i> 周邊 1km 地圖
+                          </button>
+                        ` : ''}
+                      </div>
+                    </div>
+                  </div>
+
+                  ${hasCoords ? `
+                    <div id="map-container-${event.id}" class="hidden border-t border-slate-100 bg-slate-50 p-3">
+                      <div id="map-${event.id}" class="w-full h-56 rounded-lg shadow-inner"></div>
+                    </div>
+                  ` : ''}
+                </article>
+              `;
+            }).join('');
+          }
+
+          // 構建手風琴式天數區塊
+          const section = document.createElement("section");
+          section.id = day.dayId;
+          section.className = "bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden scroll-mt-28 transition";
+          
+          section.innerHTML = `
+            <!-- 可點擊收折/展開的日期標題列 -->
+            <button onclick="toggleDayAccordion('${day.dayId}')" class="w-full px-5 py-4 bg-slate-900 hover:bg-slate-800 text-white flex justify-between items-center text-left transition">
+              <div>
+                <span class="text-xs font-bold text-amber-400 tracking-wider">DAY 0${index + 1} · ${day.fullDate}</span>
+                <h2 class="text-xl font-bold text-white">${day.title}</h2>
+              </div>
+              <div class="bg-slate-800 p-2 rounded-full border border-slate-700 text-amber-400 flex items-center justify-center w-8 h-8">
+                <i id="icon-${day.dayId}" class="fa-solid ${isDefaultOpen ? 'fa-minus' : 'fa-plus'} text-sm"></i>
+              </div>
+            </button>
+
+            <!-- 折疊內容區塊 -->
+            <div id="content-${day.dayId}" class="p-4 bg-slate-50/50 space-y-4 ${isDefaultOpen ? '' : 'hidden'}">
+              ${eventsHtml}
+            </div>
+          `;
+
+          container.appendChild(section);
+        });
 
       } catch (error) {
         console.error("載入失敗:", error);
         container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl text-center text-sm">無法載入資料，請確認 API 存取權限。</div>`;
       }
-    }
-
-    // 切換選中的天數
-    function switchDay(dayId) {
-      currentSelectedDayId = dayId;
-      renderNavTabs();
-      renderActiveDay();
-    }
-
-    // 渲染頂部 Tab 導覽按鈕
-    function renderNavTabs() {
-      const navContainer = document.getElementById("day-nav-container");
-      navContainer.innerHTML = "";
-
-      globalItineraryData.forEach((day) => {
-        const isSelected = day.dayId === currentSelectedDayId;
-
-        // 天氣資訊
-        const wData = dailyWeatherData[day.isoDate];
-        let weatherTagHtml = '';
-        if (wData) {
-          const wInfo = getWeatherIcon(wData.weatherCode, wData.rainProb);
-          weatherTagHtml = `
-            <div class="mt-1 pt-1 border-t ${isSelected ? 'border-slate-700' : 'border-slate-200/50'} flex items-center justify-center gap-1 text-[10px]">
-              <i class="fa-solid ${wInfo.icon} ${wInfo.color}"></i>
-              <span class="font-semibold ${isSelected ? 'text-slate-200' : 'text-slate-600'}">${wData.minTemp}°-${wData.maxTemp}°</span>
-            </div>
-          `;
-        }
-
-        const navBtn = document.createElement("button");
-        navBtn.onclick = () => switchDay(day.dayId);
-        navBtn.className = `flex-shrink-0 px-3.5 py-2 rounded-xl text-xs text-center font-bold transition shadow-sm border ${
-          isSelected 
-            ? "bg-slate-900 text-white border-slate-900 shadow-md scale-105" 
-            : "bg-white hover:bg-slate-100 text-slate-800 border-slate-200 opacity-80"
-        }`;
-        navBtn.innerHTML = `
-          <div class="flex items-center justify-center gap-1">
-            <span>${day.dayLabel}</span>
-            <span class="font-normal text-[10px] ${isSelected ? "opacity-90" : "text-slate-500"}">${day.date}</span>
-          </div>
-          ${weatherTagHtml}
-        `;
-        navContainer.appendChild(navBtn);
-      });
-    }
-
-    // 渲染單天行程內容
-    function renderActiveDay() {
-      const itineraryContainer = document.getElementById("itinerary-container");
-      itineraryContainer.innerHTML = "";
-
-      const activeDayData = globalItineraryData.find(d => d.dayId === currentSelectedDayId);
-      if (!activeDayData) return;
-
-      const dayIndex = globalItineraryData.findIndex(d => d.dayId === currentSelectedDayId) + 1;
-
-      let eventsHtml = "";
-      if (activeDayData.events.length === 0) {
-        eventsHtml = `<div class="bg-white p-8 rounded-xl border border-dashed border-slate-300 text-center text-slate-400 text-sm">此天尚未新增行程，開啟 Google Sheet 即可隨時填寫！</div>`;
-      } else {
-        eventsHtml = activeDayData.events.map(event => {
-          const hasCoords = event.lat && event.lng;
-          const safeTitle = event.title.replace(/'/g, "\\'");
-          const safeThai = (event.thaiName || event.title).replace(/'/g, "\\'");
-
-          return `
-            <article class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 mb-6 transition hover:shadow-lg">
-              <div class="flex flex-col md:flex-row">
-                <div class="md:w-1/3 h-48 md:h-auto relative bg-slate-200 flex-shrink-0">
-                  <img src="${event.image}" alt="${event.title}" class="w-full h-full object-cover">
-                  <span class="absolute top-3 left-3 ${categoryBadgeStyles[event.category] || "bg-slate-800 text-white"} text-xs px-2.5 py-1 rounded-md font-medium shadow-sm">
-                    ${event.category}
-                  </span>
-                </div>
-
-                <div class="p-5 md:w-2/3 flex flex-col justify-between flex-grow">
-                  <div>
-                    <p class="text-xs font-bold text-slate-400 mb-1">${event.time}</p>
-                    <h3 class="text-lg font-bold text-slate-800">${event.title}</h3>
-                    <p class="text-xs text-slate-500 mb-2">${event.subtitle}</p>
-
-                    <!-- 泰文大字區塊 -->
-                    ${event.thaiName ? `
-                      <div class="bg-amber-50/70 border border-amber-200/60 rounded-lg p-2.5 my-2 flex justify-between items-center">
-                        <div class="pr-2">
-                          <span class="text-[10px] text-amber-700 font-bold block">泰文名稱：</span>
-                          <p class="text-base font-black text-slate-900 leading-tight">${event.thaiName}</p>
-                        </div>
-                        <button onclick="speakThai('${safeThai}', this)" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white p-2 rounded-full flex-shrink-0 transition shadow-sm" title="朗讀泰文">
-                          <i class="fa-solid fa-volume-high text-xs"></i>
-                        </button>
-                      </div>
-                    ` : ''}
-
-                    ${event.notes.length > 0 && event.notes[0] !== "" ? `
-                      <ul class="text-xs text-slate-600 space-y-1 mb-3 list-disc list-inside bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        ${event.notes.map(note => `<li>${note.trim()}</li>`).join('')}
-                      </ul>
-                    ` : ''}
-                  </div>
-
-                  <div class="flex flex-wrap gap-2 pt-3 mt-3 border-t border-slate-100">
-                    <button onclick="copyToClipboard('${event.address}', this)" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-md font-semibold transition flex items-center gap-1">
-                      <i class="fa-regular fa-copy"></i> 複製地址 (Grab)
-                    </button>
-                    <a href="${event.mapUrl}" target="_blank" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1">
-                      <i class="fa-solid fa-location-dot text-red-500"></i> Google Maps
-                    </a>
-                    ${hasCoords ? `
-                      <button id="map-btn-${event.id}" onclick="toggleMap('${event.id}', ${event.lat}, ${event.lng}, '${safeTitle}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1">
-                        <i class="fa-solid fa-map text-amber-500"></i> 周邊 1km 地圖
-                      </button>
-                    ` : ''}
-                  </div>
-                </div>
-              </div>
-
-              ${hasCoords ? `
-                <div id="map-container-${event.id}" class="hidden border-t border-slate-100 bg-slate-50 p-3">
-                  <div id="map-${event.id}" class="w-full h-56 rounded-lg shadow-inner"></div>
-                </div>
-              ` : ''}
-            </article>
-          `;
-        }).join('');
-      }
-
-      const section = document.createElement("section");
-      section.className = "animate-fade-in";
-      section.innerHTML = `
-        <div class="mb-4">
-          <span class="text-xs font-bold text-amber-600 tracking-wider">DAY 0${dayIndex} · ${activeDayData.fullDate}</span>
-          <h2 class="text-2xl font-black text-slate-900">${activeDayData.title}</h2>
-        </div>
-        <div class="space-y-4">${eventsHtml}</div>
-      `;
-
-      itineraryContainer.appendChild(section);
     }
 
     // 初始化呼叫
