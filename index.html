@@ -1,654 +1,259 @@
 <!DOCTYPE html>
-<html lang="zh-TW" class="scroll-smooth">
+<html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2026清邁兄弟之旅</title>
-
-  <!-- PWA 設定 -->
-  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIjIwMjYg4LmA4LiK4Li14Lii4LmJ4LiZ4Lij4LmI4LmA4LiB4LiiIiwKICAic2hvcnRfbmFtZSI6ICIyMDI24LmA4LiK4Li14LiiIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwZjE3MmEiLAogICJ0aGVtZV9jb2xvciI6ICIjMGYxNzJhIgp9">
-  <meta name="theme-color" content="#0f172a">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
+  <title>清邁行程與旅費記帳工具</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome 圖示庫 -->
+  <!-- FontAwesome 圖示庫 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Leaflet.js 免費互動地圖套件 -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  
-  <style>
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-  </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased pb-20">
+<body class="bg-slate-100 min-h-screen text-slate-800 pb-12">
 
-  <!-- 1. 頂部導覽列 -->
-  <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
-    <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-      <span class="font-bold text-lg tracking-wide">Chiang Mai 2026</span>
-      <div class="flex space-x-2">
-        <a href="#expense-section" class="text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-1.5 rounded-full transition flex items-center gap-1 shadow-sm">
-          <i class="fa-solid fa-receipt"></i> 分帳小工具
-        </a>
-        <a href="https://maps.app.goo.gl/e5BXS9CFF6uJgYa98" target="_blank" class="text-xs bg-rose-500 hover:bg-rose-600 text-white font-bold px-3 py-1.5 rounded-full transition flex items-center gap-1 shadow-sm">
-          <i class="fa-solid fa-heart"></i> 口袋名單地圖
-        </a>
-        <button onclick="window.print()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-full border border-slate-700 transition">
-          <i class="fa-solid fa-download mr-1"></i> 列印/PDF
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <!-- 2. 主標題視覺區 -->
-  <section class="relative bg-cover bg-center text-white py-14 px-4 text-center" 
-           style="background-image: url('https://lixiaoyu.tw/wp-content/uploads/20190725165714_69.jpg');">
-    <div class="absolute inset-0 bg-slate-900/70"></div>
-
-    <div class="relative z-10 max-w-3xl mx-auto">
-      <div class="inline-block bg-amber-500/90 backdrop-blur-md text-slate-950 font-extrabold text-xs px-3 py-1 rounded-full mb-3 shadow-lg">
-        <i class="fa-regular fa-clock mr-1"></i> <span id="countdown-text">計算倒數中...</span>
-      </div>
-
-      <p class="text-amber-400 font-semibold tracking-widest text-sm uppercase mb-2">BROTHERS TRIP · 9天8夜</p>
-      <h1 class="text-3xl sm:text-4xl font-extrabold mb-3">2026清邁兄弟之旅</h1>
-      <p class="text-slate-300 text-sm sm:text-base">2026 / 10 / 09 — 10 / 17 · 泰國清邁</p>
-      
-      <div class="flex flex-wrap justify-center gap-2 mt-6 text-xs text-slate-300">
-        <span class="bg-slate-800/80 backdrop-blur px-3 py-1 rounded-full border border-slate-700">市區 Grab / 雙條車</span>
-        <span class="bg-slate-800/80 backdrop-blur px-3 py-1 rounded-full border border-slate-700">每人托運 23kg</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- 3. 天氣預報與匯率換算工具 -->
-  <section class="max-w-4xl mx-auto px-4 -mt-6 relative z-20 mb-4">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      
-      <!-- 清邁 5 小時內即時天氣預報 -->
-      <div class="bg-slate-900 text-white p-4 rounded-xl shadow-lg border border-slate-800">
-        <div class="flex justify-between items-center mb-2">
-          <span class="text-xs font-bold text-amber-400 flex items-center gap-1">
-            <i class="fa-solid fa-cloud-sun-rain"></i> 清邁未來 5 小時天氣預報
-          </span>
-          <span id="current-temp" class="text-xs text-slate-300 font-medium">載入中...</span>
-        </div>
-
-        <div id="weather-hourly" class="flex space-x-2 overflow-x-auto no-scrollbar pt-1 pb-1">
-          <div class="text-xs text-slate-400 py-2">正在讀取小時天氣...</div>
-        </div>
-      </div>
-
-      <!-- 泰銖 ⇄ 台幣 雙向即時計算機 -->
-      <div class="bg-white p-4 rounded-xl shadow-lg border border-slate-100 flex flex-col justify-between">
-        <div class="flex justify-between items-center mb-2">
-          <span class="text-xs font-bold text-emerald-600 flex items-center gap-1">
-            <i class="fa-solid fa-calculator"></i> 雙向即時匯率換算
-          </span>
-          <span id="exchange-rate-info" class="text-[10px] text-slate-400">更新即時匯率中...</span>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <div class="relative flex-1">
-            <input type="number" id="thb-input" placeholder="泰銖 THB" oninput="convertCurrency('THB')"
-                   class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-            <span class="absolute right-2 top-2 text-xs font-bold text-slate-400 currency-symbol">฿</span>
-          </div>
-          <span class="text-xs font-bold text-slate-400">⇄</span>
-          <div class="relative flex-1">
-            <input type="number" id="twd-input" placeholder="台幣 TWD" oninput="convertCurrency('TWD')"
-                   class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-            <span class="absolute right-2 top-2 text-xs font-bold text-emerald-500">NT$</span>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </section>
-
-  <!-- 4. 航班與住宿摘要卡片 -->
-  <section class="max-w-4xl mx-auto px-4 relative z-20">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <!-- 去程航班 -->
-      <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-100">
-        <div class="flex justify-between items-center mb-2">
-          <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">去程 OUTBOUND</span>
-        </div>
-        <h3 class="text-xl font-bold text-slate-800">CI851</h3>
-        <p class="text-sm text-slate-600 mt-1">10/09 07:30 → 10:20</p>
-        <p class="text-xs text-slate-400 mb-4">TPE T1 → CNX</p>
-        <a href="https://www.china-airlines.com/" target="_blank" class="block text-center text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 rounded-lg font-medium transition">
-          航班動態
-        </a>
-      </div>
-
-      <!-- 回程航班 -->
-      <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-100">
-        <div class="flex justify-between items-center mb-2">
-          <span class="text-xs font-bold text-sky-600 bg-sky-50 px-2.5 py-0.5 rounded-full">回程 RETURN</span>
-        </div>
-        <h3 class="text-xl font-bold text-slate-800">CI852</h3>
-        <p class="text-sm text-slate-600 mt-1">10/17 11:20 → 16:00</p>
-        <p class="text-xs text-slate-400 mb-4">CNX → TPE T1</p>
-        <a href="https://www.china-airlines.com/" target="_blank" class="block text-center text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 rounded-lg font-medium transition">
-          線上報到
-        </a>
-      </div>
-
-      <!-- 住宿資訊 (含泰文卡片與發音) -->
-      <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-100 flex flex-col justify-between">
-        <div>
-          <div class="flex justify-between items-center mb-2">
-            <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full">住宿 STAY</span>
-          </div>
-          <h3 class="text-base font-bold text-slate-800 truncate">Art Mai Gallery Hotel</h3>
-          <p class="text-xs text-slate-500 mt-0.5 mb-2">清邁阿特邁畫廊飯店 (寧曼路)</p>
-          
-          <!-- 泰文大字區塊 -->
-          <div class="bg-amber-50/70 border border-amber-200/60 rounded-lg p-2.5 my-2 flex justify-between items-center">
-            <div class="pr-2">
-              <span class="text-[10px] text-amber-700 font-bold block">給司機看泰文：</span>
-              <p class="text-base font-black text-slate-900 leading-tight">โรงแรมอาร์ต ไหม แกลเลอรี</p>
-            </div>
-            <button onclick="speakThai('โรงแรมอาร์ต ไหม แกลเลอรี', this)" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white p-2 rounded-full flex-shrink-0 transition shadow-sm" title="朗讀泰文">
-              <i class="fa-solid fa-volume-high text-xs"></i>
-            </button>
-          </div>
-        </div>
-
-        <div class="flex gap-2 mt-2">
-          <button onclick="copyToClipboard('Art Mai Gallery Hotel Chiang Mai', this)" class="flex-1 text-center text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 rounded-lg font-medium transition">
-            <i class="fa-regular fa-copy mr-1"></i> 複製地址
-          </button>
-          <a href="https://www.google.com/maps/search/?api=1&query=Art+Mai+Gallery+Chiang+Mai+Hotel" target="_blank" class="flex-1 text-center text-xs bg-amber-500 hover:bg-amber-600 text-white py-1.5 rounded-lg font-medium transition">
-            地圖
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 5. 旅費分帳 / 雙向同步記帳小工具 (全升級版) -->
-  <section id="expense-section" class="max-w-4xl mx-auto px-4 my-8 scroll-mt-20">
-    <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
-      <!-- 區塊標頭 -->
-      <div class="bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-4 text-white flex justify-between items-center">
-        <div>
-          <h2 class="text-lg font-bold flex items-center gap-2">
-            <i class="fa-solid fa-wallet"></i> 旅費分帳 / 記帳小工具
-          </h2>
-          <p class="text-xs text-amber-100 mt-0.5">多成員點選、圖卡速記、Google Sheets 雙向同步</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <button onclick="syncExpensesFromSheet()" class="text-xs bg-amber-700/60 hover:bg-amber-800 text-white px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1">
-            <i class="fa-solid fa-rotate mr-1"></i> 重新同步
-          </button>
-        </div>
-      </div>
-
-      <div class="p-6 grid grid-cols-1 md:grid-cols-12 gap-6">
-        <!-- 記帳輸入表單 -->
-        <div class="md:col-span-5 bg-slate-50 p-4 rounded-xl border border-slate-200/80">
-          <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1.5">
-            <i class="fa-solid fa-pen-to-square text-amber-500"></i> 新增消費紀錄
-          </h3>
-          
-          <form id="expense-form" onsubmit="addExpense(event)" class="space-y-4">
-            <!-- 1. 付款人選取 (圖示卡片) -->
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1.5">誰付的錢？（點選頭像）</label>
-              <div id="payer-avatars" class="flex flex-wrap gap-2">
-                <span class="text-xs text-slate-400">載入成員中...</span>
-              </div>
-            </div>
-
-            <!-- 2. 分類選擇圖卡 (吃/喝/車/其他) -->
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1.5">消費分類</label>
-              <div class="grid grid-cols-4 gap-1.5" id="category-picker">
-                <button type="button" onclick="selectCategory('吃')" class="cat-btn bg-amber-500 text-white border-amber-500 py-1.5 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5">
-                  <span class="text-sm">🍔</span> 吃
-                </button>
-                <button type="button" onclick="selectCategory('喝')" class="cat-btn bg-white text-slate-700 border border-slate-200 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-100 transition flex flex-col items-center gap-0.5">
-                  <span class="text-sm">🍹</span> 喝
-                </button>
-                <button type="button" onclick="selectCategory('車')" class="cat-btn bg-white text-slate-700 border border-slate-200 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-100 transition flex flex-col items-center gap-0.5">
-                  <span class="text-sm">🚕</span> 車
-                </button>
-                <button type="button" onclick="selectCategory('其他')" class="cat-btn bg-white text-slate-700 border border-slate-200 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-100 transition flex flex-col items-center gap-0.5">
-                  <span class="text-sm">🛍️</span> 其他
-                </button>
-              </div>
-            </div>
-
-            <!-- 3. 文字備註 -->
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">文字備註（選填）</label>
-              <input type="text" id="exp-note" placeholder="例：鳳飛飛豬腳飯、Grab 到寧曼路"
-                     class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500">
-            </div>
-
-            <!-- 4. 金額輸入 (iPhone 數字鍵盤) -->
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">金額 (<span class="currency-code">THB</span>)</label>
-              <div class="relative">
-                <input type="number" inputmode="decimal" id="exp-amount" placeholder="0" min="0.1" step="any" required
-                       class="w-full bg-white border border-slate-200 rounded-lg pl-3 pr-10 py-2 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500">
-                <span class="absolute right-3 top-2 text-xs font-bold text-slate-400 currency-symbol">฿</span>
-              </div>
-            </div>
-
-            <!-- 5. 平分對象選取 (多選頭像) -->
-            <div>
-              <div class="flex justify-between items-center mb-1.5">
-                <label class="block text-xs font-semibold text-slate-600">誰要平分這筆錢？</label>
-                <button type="button" onclick="toggleSelectAllSplitters()" class="text-[10px] text-amber-600 font-bold hover:underline">全選 / 清空</button>
-              </div>
-              <div id="split-avatars" class="flex flex-wrap gap-2">
-                <span class="text-xs text-slate-400">載入成員中...</span>
-              </div>
-            </div>
-
-            <button type="submit" id="submit-exp-btn" class="w-full bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold py-2.5 rounded-lg text-xs transition shadow-sm mt-2 flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-cloud-arrow-up"></i> 新增並同步至 Google Sheet
-            </button>
-          </form>
-        </div>
-
-        <!-- 結算結果卡片與花費歷史 -->
-        <div class="md:col-span-7 flex flex-col justify-between space-y-4">
-          <!-- 結算分析看板 -->
-          <div class="bg-amber-50/60 border border-amber-200/80 rounded-xl p-4">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-amber-800 block">最終結算計算機</span>
-              <span id="sync-status" class="text-[10px] text-emerald-600 font-bold"><i class="fa-solid fa-arrows-rotate fa-spin"></i> 同步中...</span>
-            </div>
-            <div id="expense-summary" class="text-slate-800">
-              <p class="text-xs text-slate-500">正在計算結算資訊...</p>
-            </div>
-          </div>
-
-          <!-- 歷史消費紀錄清單 -->
-          <div class="flex-1">
-            <h4 class="text-xs font-bold text-slate-500 mb-2 flex justify-between items-center">
-              <span>歷史消費明細</span>
-              <span id="expense-count" class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">0 筆</span>
-            </h4>
-            <div id="expense-list" class="max-h-60 overflow-y-auto space-y-2 pr-1 no-scrollbar">
-              <div class="text-xs text-slate-400 py-4 text-center border border-dashed border-slate-200 rounded-lg">載入明細中...</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 6. 快速跳轉 Tab 導覽列 -->
-  <nav class="sticky top-12 z-40 bg-white/90 backdrop-blur border-b border-slate-200 py-2 my-8 shadow-sm">
-    <div id="day-nav-container" class="max-w-4xl mx-auto px-4 flex space-x-2 overflow-x-auto no-scrollbar"></div>
-  </nav>
-
-  <!-- 7. 一頁式行程卡片區塊 (含收折功能) -->
-  <main id="itinerary-container" class="max-w-4xl mx-auto px-4 space-y-6">
-    <div id="loading-spinner" class="text-center py-12">
-      <i class="fa-solid fa-circle-notch fa-spin text-3xl text-slate-400"></i>
-      <p class="text-sm text-slate-500 mt-3 font-medium">正在讀取最新的試算表行程資料...</p>
-    </div>
-  </main>
-
-  <!-- 8. JavaScript 邏輯 -->
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycby3lp2T_FBEQWGLrenjUW5rbmw5WyAO477YXn1Y84PRB6eo2f8Elf-CRcpK4vnB3GHpNw/exec";
-    const mapInstances = {};
-    let thbToTwdRate = 0.92;
-    let dailyWeatherData = {}; 
+  <div class="max-w-2xl mx-auto px-4 py-6">
     
-    // 💰 拆帳系統狀態管理
-    let members = [];            // 成員清單 [{MemberId: 'M1', Name: '小明', Avatar: '👦', Status: 'Active'}]
-    let expenses = [];           // 記帳明細
-    let defaultCurrency = 'THB'; // 預設幣別 (來自 Members!F1)
-    let selectedPayerId = '';    // 目前選取的付款人 MemberId
-    let selectedCategory = '吃';  // 目前選取的分類
-    let selectedSplitters = [];  // 目前選取的平分對象 MemberId 陣列
+    <!-- 頁面標頭 -->
+    <header class="mb-6 text-center">
+      <h1 class="text-2xl font-black text-slate-800 tracking-tight flex items-center justify-center gap-2">
+        <span>✈️ 清邁自由行夥伴</span>
+      </h1>
+      <p class="text-xs text-slate-500 mt-1">行程規劃 · 景點導覽 · 團隊分帳</p>
+    </header>
 
-    // 幣別符號映射表
-    const currencySymbols = {
-      'THB': '฿',
-      'JPY': '¥',
-      'KRW': '₩',
-      'TWD': 'NT$',
-      'USD': '$',
-      'EUR': '€',
-      'HKD': 'HK$'
-    };
-
-    // 字串安全逸出工具
-    function escapeJsString(str) {
-      if (!str) return '';
-      return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
-    }
-
-    // 🔊 泰語語音朗讀功能 (Web Speech API)
-    function speakThai(text, btnElement) {
-      if (!('speechSynthesis' in window)) {
-        alert('您的瀏覽器不支援語音朗讀功能');
-        return;
-      }
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'th-TH';
-      utterance.rate = 0.9;
-
-      const originalHtml = btnElement.innerHTML;
-      btnElement.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xs"></i>`;
-      btnElement.classList.add('bg-emerald-500');
-
-      utterance.onend = () => { btnElement.innerHTML = originalHtml; btnElement.classList.remove('bg-emerald-500'); };
-      utterance.onerror = () => { btnElement.innerHTML = originalHtml; btnElement.classList.remove('bg-emerald-500'); };
-
-      window.speechSynthesis.speak(utterance);
-    }
-
-    // 根據 WMO 天氣代碼與降雨機率傳回 FontAwesome 圖示與顏色
-    function getWeatherIcon(weatherCode, rainProb) {
-      if (weatherCode === 0) return { icon: "fa-sun", color: "text-amber-500" };
-      if (weatherCode >= 1 && weatherCode <= 3) return { icon: "fa-cloud-sun", color: "text-amber-400" };
-      if (weatherCode >= 95) return { icon: "fa-cloud-bolt", color: "text-purple-500" };
-      if (weatherCode >= 61 && weatherCode <= 67) return { icon: "fa-cloud-showers-heavy", color: "text-blue-600" };
-      if (weatherCode >= 51 && weatherCode <= 55) return { icon: "fa-cloud-rain", color: "text-blue-400" };
+    <!-- ------------------------------------------------------------------ -->
+    <!-- 旅費分帳 / 記帳小工具 (優化版 UI：支援收折與 Tab 分頁) -->
+    <!-- ------------------------------------------------------------------ -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 mb-6 overflow-hidden transition-all duration-300">
       
-      if (rainProb >= 70) return { icon: "fa-cloud-showers-heavy", color: "text-blue-600" };
-      if (rainProb >= 40) return { icon: "fa-cloud-rain", color: "text-blue-400" };
-      if (rainProb >= 20) return { icon: "fa-cloud-sun", color: "text-amber-400" };
-      return { icon: "fa-sun", color: "text-amber-500" };
-    }
+      <!-- 1. 可點擊收折的標題列 -->
+      <button id="expense-toggle-btn" onclick="toggleExpenseSection()" class="w-full px-5 py-4 bg-slate-50 hover:bg-slate-100/80 flex items-center justify-between border-b border-slate-100 transition-colors text-left outline-none">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-sm">
+            <i class="fa-solid fa-calculator"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-800 text-sm sm:text-base leading-tight">旅費分帳 / 記帳小工具</h3>
+            <p class="text-[11px] text-slate-400 mt-0.5" id="sync-status">點擊可展開或收折記帳面板</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="expense-count" class="text-[10px] bg-amber-100 text-amber-800 font-extrabold px-2 py-0.5 rounded-full">0 筆</span>
+          <i id="expense-chevron" class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-300"></i>
+        </div>
+      </button>
 
-    // 抓取清邁即時與每日天氣 API
-    async function fetchChiangMaiWeather() {
-      const weatherContainer = document.getElementById('weather-hourly');
-      const tempContainer = document.getElementById('current-temp');
-
-      try {
-        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=18.7883&longitude=98.9853&hourly=temperature_2m,precipitation_probability,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&current_weather=true&timezone=Asia%2FBangkok");
-        const data = await response.json();
-
-        if (data.current_weather) {
-          tempContainer.innerText = `目前 ${Math.round(data.current_weather.temperature)}°C`;
-        }
-
-        if (data.hourly && data.hourly.time) {
-          const currentHour = new Date().getHours();
-          let hourlyHtml = '';
-          for (let i = currentHour; i < currentHour + 5 && i < data.hourly.time.length; i++) {
-            const hourLabel = `${data.hourly.time[i].substring(11, 13)}:00`;
-            const temp = Math.round(data.hourly.temperature_2m[i]);
-            const rainProb = data.hourly.precipitation_probability[i] || 0;
-            const code = data.hourly.weathercode[i];
-            const weather = getWeatherIcon(code, rainProb);
-
-            hourlyHtml += `
-              <div class="flex-shrink-0 bg-slate-800/80 p-2 rounded-lg border border-slate-700/60 text-center w-16">
-                <div class="text-[10px] text-slate-400 font-medium">${hourLabel}</div>
-                <div class="my-1"><i class="fa-solid ${weather.icon} ${weather.color} text-sm"></i></div>
-                <div class="text-xs font-bold text-white">${temp}°C</div>
-                <div class="text-[10px] text-blue-300 font-medium">${rainProb}%</div>
-              </div>
-            `;
-          }
-          weatherContainer.innerHTML = hourlyHtml;
-        }
-
-        if (data.daily && data.daily.time) {
-          for (let i = 0; i < data.daily.time.length; i++) {
-            const dateKey = data.daily.time[i];
-            dailyWeatherData[dateKey] = {
-              maxTemp: Math.round(data.daily.temperature_2m_max[i]),
-              minTemp: Math.round(data.daily.temperature_2m_min[i]),
-              rainProb: data.daily.precipitation_probability_max[i] || 0,
-              weatherCode: data.daily.weathercode[i]
-            };
-          }
-        }
-
-        fetchAndRenderItinerary();
-
-      } catch (err) {
-        console.error("天氣載入失敗:", err);
-        weatherContainer.innerHTML = `<div class="text-xs text-slate-500 py-1">無法載入 5 小時預報</div>`;
-      }
-    }
-
-    // 抓取每日即時匯率 API
-    async function fetchLiveExchangeRate() {
-      const infoEl = document.getElementById('exchange-rate-info');
-      try {
-        const res = await fetch("https://open.er-api.com/v6/latest/THB");
-        const data = await res.json();
-        if (data && data.rates && data.rates.TWD) {
-          thbToTwdRate = data.rates.TWD;
-          infoEl.innerText = `即時匯率: 1 THB ≈ ${thbToTwdRate.toFixed(2)} TWD`;
-          renderExpenses(); // 更新記帳中的匯率顯示
-        }
-      } catch (err) {
-        console.error("匯率抓取失敗，使用備用匯率", err);
-        infoEl.innerText = `參考匯率: 1 THB ≈ ${thbToTwdRate} TWD`;
-      }
-    }
-
-    // 雙向匯率轉換邏輯
-    function convertCurrency(source) {
-      const thbInput = document.getElementById('thb-input');
-      const twdInput = document.getElementById('twd-input');
-
-      if (source === 'THB') {
-        const thb = parseFloat(thbInput.value);
-        if (isNaN(thb) || thb <= 0) twdInput.value = '';
-        else twdInput.value = Math.round(thb * thbToTwdRate);
-      } else if (source === 'TWD') {
-        const twd = parseFloat(twdInput.value);
-        if (isNaN(twd) || twd <= 0) thbInput.value = '';
-        else thbInput.value = Math.round(twd / thbToTwdRate);
-      }
-    }
-
-    // ------------------- 💰 Google Sheets 雙向同步拆帳核心邏輯 -------------------
-
-    // 1. 從 Google Sheets (GAS) 載入拆帳資料 (Members, Expenses, Currency)
-    async function syncExpensesFromSheet() {
-      const syncStatusEl = document.getElementById('sync-status');
-      syncStatusEl.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> 同步中...`;
-      syncStatusEl.className = 'text-[10px] text-amber-600 font-bold';
-
-      try {
-        const res = await fetch(`${API_URL}?action=getExpensesData`);
-        const data = await res.json();
-
-        if (data.status === 'success') {
-          members = data.members || [];
-          expenses = data.expenses || [];
-          defaultCurrency = data.currency || 'THB';
-
-          // 更新幣別符號 UI
-          const symbol = currencySymbols[defaultCurrency] || defaultCurrency;
-          document.querySelectorAll('.currency-symbol').forEach(el => el.innerText = symbol);
-          document.querySelectorAll('.currency-code').forEach(el => el.innerText = defaultCurrency);
-
-          // 預設全選在隊成員為平分對象，並設定第一個人為預設付款人
-          const activeMembers = members.filter(m => m.Status !== 'Left');
-          if (activeMembers.length > 0 && !selectedPayerId) {
-            selectedPayerId = activeMembers[0].MemberId;
-          }
-          selectedSplitters = activeMembers.map(m => m.MemberId);
-
-          renderFormUI();
-          renderExpenses();
-
-          syncStatusEl.innerHTML = `<i class="fa-solid fa-check"></i> 已同步最新試算表`;
-          syncStatusEl.className = 'text-[10px] text-emerald-600 font-bold';
-        } else {
-          throw new Error(data.message || '讀取失敗');
-        }
-      } catch (err) {
-        console.error('同步拆帳資料失敗:', err);
-        syncStatusEl.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> 使用離線/本地快取`;
-        syncStatusEl.className = 'text-[10px] text-rose-500 font-bold';
-      }
-    }
-
-    // 2. 渲染表單上的「付款人」與「平分對象」頭像選擇器
-    function renderFormUI() {
-      const payerAvatarsContainer = document.getElementById('payer-avatars');
-      const splitAvatarsContainer = document.getElementById('split-avatars');
-
-      const activeMembers = members.filter(m => m.Status !== 'Left');
-
-      // (A) 渲染付款人 (單選)
-      payerAvatarsContainer.innerHTML = activeMembers.map(m => {
-        const isSelected = m.MemberId === selectedPayerId;
-        return `
-          <button type="button" onclick="selectPayer('${m.MemberId}')"
-                  class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border transition text-xs font-bold ${
-                    isSelected ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                  }">
-            <span class="text-base">${m.Avatar || '👤'}</span>
-            <span>${m.Name}</span>
+      <!-- 2. 主體內容區域 (可收折) -->
+      <div id="expense-content" class="p-4 sm:p-5">
+        
+        <!-- Tab 切換選單 -->
+        <div class="flex border-b border-slate-200 mb-4 gap-4 text-xs font-bold">
+          <button onclick="switchTab('add')" id="tab-btn-add" class="pb-2 border-b-2 border-amber-500 text-amber-600 transition-colors flex items-center gap-1.5 outline-none">
+            <i class="fa-solid fa-plus-circle"></i> 新增消費
           </button>
-        `;
-      }).join('');
-
-      // (B) 渲染平分對象 (多選)
-      splitAvatarsContainer.innerHTML = activeMembers.map(m => {
-        const isSelected = selectedSplitters.includes(m.MemberId);
-        return `
-          <button type="button" onclick="toggleSplitter('${m.MemberId}')"
-                  class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border transition text-xs font-bold ${
-                    isSelected ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-white text-slate-400 border-slate-200 opacity-60'
-                  }">
-            <span class="text-base">${m.Avatar || '👤'}</span>
-            <span>${m.Name}</span>
-            <i class="fa-solid ${isSelected ? 'fa-check text-[10px]' : 'fa-plus text-[10px]'}"></i>
+          <button onclick="switchTab('summary')" id="tab-btn-summary" class="pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1.5 outline-none">
+            <i class="fa-solid fa-chart-pie"></i> 拆帳總覽
           </button>
-        `;
-      }).join('');
-    }
+          <button onclick="switchTab('list')" id="tab-btn-list" class="pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1.5 outline-none">
+            <i class="fa-solid fa-list-ul"></i> 明細紀錄
+          </button>
+        </div>
 
-    // 切換付款人
-    function selectPayer(memberId) {
-      selectedPayerId = memberId;
-      renderFormUI();
-    }
+        <!-- Panel 1: 新增記帳表單 -->
+        <div id="panel-add" class="space-y-3">
+          <div class="grid grid-cols-2 gap-2 sm:gap-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-500 mb-1">付款人</label>
+              <select id="expense-payer" onchange="selectedPayerId = this.value" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium focus:ring-1 focus:ring-amber-500 outline-none"></select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-500 mb-1">金額 (THB 泰銖)</label>
+              <input type="number" id="expense-amount" placeholder="0" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 font-bold text-slate-900 focus:ring-1 focus:ring-amber-500 outline-none">
+            </div>
+          </div>
 
-    // 切換平分對象勾選
-    function toggleSplitter(memberId) {
-      if (selectedSplitters.includes(memberId)) {
-        selectedSplitters = selectedSplitters.filter(id => id !== memberId);
+          <div class="grid grid-cols-2 gap-2 sm:gap-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-500 mb-1">類別</label>
+              <select id="expense-category" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium focus:ring-1 focus:ring-amber-500 outline-none">
+                <option value="吃">🍔 餐飲美食</option>
+                <option value="喝">🍹 飲料點心</option>
+                <option value="車">🚕 交通車資</option>
+                <option value="其他">🛍️ 購物娛樂</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-500 mb-1">備註/品名</label>
+              <input type="text" id="expense-note" placeholder="例：鳳飛飛豬腳飯" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 focus:ring-1 focus:ring-amber-500 outline-none">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">平分參與人 (可複選)</label>
+            <div id="expense-splitters" class="flex flex-wrap gap-1.5 py-1"></div>
+          </div>
+
+          <button onclick="addExpense()" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-lg shadow-sm transition-all active:scale-[0.99] flex items-center justify-center gap-1.5 mt-2">
+            <i class="fa-solid fa-check"></i> 儲存並同步到 Google Sheet
+          </button>
+        </div>
+
+        <!-- Panel 2: 拆帳與累積金額總覽 -->
+        <div id="panel-summary" class="hidden">
+          <div id="expense-summary"></div>
+        </div>
+
+        <!-- Panel 3: 歷史消費清單 -->
+        <div id="panel-list" class="hidden">
+          <div id="expense-list" class="space-y-2 max-h-80 overflow-y-auto pr-1"></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 行程列表展示區 (原本的行程) -->
+    <section class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+      <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-map-location-dot text-indigo-500"></i> 行程概覽
+      </h3>
+      <div id="itinerary-list" class="text-xs text-slate-400 py-4 text-center">
+        <i class="fa-solid fa-spinner fa-spin"></i> 載入行程資料中...
+      </div>
+    </section>
+
+  </div>
+
+  <!-- 邏輯處理腳本 -->
+  <script>
+    // ⚠️ 請填入你的 Google Apps Script Web App 網址 (/exec 結尾)
+    const API_URL = "YOUR_GAS_DEPLOYMENT_URL_HERE"; 
+    
+    const thbToTwdRate = 0.92; // 泰銖轉台幣預估匯率
+    const currencySymbols = { 'THB': '฿', 'TWD': 'NT$' };
+
+    let members = [];
+    let expenses = [];
+    let defaultCurrency = 'THB';
+    let selectedPayerId = '';
+    let selectedSplitters = [];
+
+    // 預備成員 fallback（防止網路不良時卡死）
+    const fallbackMembers = [
+      { MemberId: 'M1', Name: '成員A', Avatar: '👦', Status: 'Active' },
+      { MemberId: 'M2', Name: '成員B', Avatar: '👨', Status: 'Active' },
+      { MemberId: 'M3', Name: '成員C', Avatar: '🧔', Status: 'Active' }
+    ];
+
+    // 頁面初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchItinerary();
+      syncExpensesFromSheet();
+    });
+
+    // 1. 收折面板控制
+    function toggleExpenseSection() {
+      const content = document.getElementById('expense-content');
+      const chevron = document.getElementById('expense-chevron');
+      if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        chevron.style.transform = 'rotate(0deg)';
       } else {
-        selectedSplitters.push(memberId);
+        content.classList.add('hidden');
+        chevron.style.transform = 'rotate(-90deg)';
       }
-      renderFormUI();
     }
 
-    // 全選/取消全選平分對象
-    function toggleSelectAllSplitters() {
-      const activeMemberIds = members.filter(m => m.Status !== 'Left').map(m => m.MemberId);
-      if (selectedSplitters.length === activeMemberIds.length) {
-        selectedSplitters = [];
-      } else {
-        selectedSplitters = [...activeMemberIds];
-      }
-      renderFormUI();
-    }
-
-    // 切換分類圖卡 (吃/喝/車/其他)
-    function selectCategory(cat) {
-      selectedCategory = cat;
-      const catBtns = document.querySelectorAll('.cat-btn');
-      catBtns.forEach(btn => {
-        if (btn.innerText.includes(cat)) {
-          btn.className = 'cat-btn bg-amber-500 text-white border-amber-500 py-1.5 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5 shadow-sm';
+    // 2. Tab 切換控制
+    function switchTab(tabName) {
+      const tabs = ['add', 'summary', 'list'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const panel = document.getElementById(`panel-${t}`);
+        if (t === tabName) {
+          panel.classList.remove('hidden');
+          btn.classList.add('border-amber-500', 'text-amber-600');
+          btn.classList.remove('border-transparent', 'text-slate-400');
         } else {
-          btn.className = 'cat-btn bg-white text-slate-700 border border-slate-200 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-100 transition flex flex-col items-center gap-0.5';
+          panel.classList.add('hidden');
+          btn.classList.remove('border-amber-500', 'text-amber-600');
+          btn.classList.add('border-transparent', 'text-slate-400');
         }
       });
     }
 
-    // 3. 新增消費紀錄 (同步發送到 Google Sheets API)
-    async function addExpense(e) {
-      e.preventDefault();
-      const amount = parseFloat(document.getElementById('exp-amount').value);
-      const note = document.getElementById('exp-note').value.trim();
-
-      if (isNaN(amount) || amount <= 0) {
-        alert('請輸入有效的金額！');
-        return;
-      }
-
-      if (!selectedPayerId) {
-        alert('請選擇誰是付款人！');
-        return;
-      }
-
-      if (selectedSplitters.length === 0) {
-        alert('請至少選擇一位平分對象！');
-        return;
-      }
-
-      const submitBtn = document.getElementById('submit-exp-btn');
-      const originalBtnText = submitBtn.innerHTML;
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 正在寫入 Google Sheet...`;
-
-      const newExpense = {
-        ExpenseId: 'EXP-' + Date.now().toString().slice(-6),
-        Timestamp: new Date().toLocaleString('sv-SE'), // YYYY-MM-DD HH:mm
-        PayerId: selectedPayerId,
-        Amount: amount,
-        Category: selectedCategory,
-        Note: note || selectedCategory,
-        SplitWith: selectedSplitters.join(',')
-      };
+    // 3. 從 Google Sheet 同步成員與記帳資料
+    async function syncExpensesFromSheet() {
+      const syncStatusEl = document.getElementById('sync-status');
+      syncStatusEl.innerHTML = `<span class="text-amber-600"><i class="fa-solid fa-arrows-rotate fa-spin"></i> 同步資料中...</span>`;
 
       try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'addExpense',
-            data: newExpense
-          })
-        });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8秒超時機制
 
-        const resData = await response.json();
+        const res = await fetch(`${API_URL}?action=getExpensesData`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        const data = await res.json();
 
-        if (resData.status === 'success') {
-          // 本地更新並重新渲染
-          expenses.unshift(newExpense);
-          renderExpenses();
-
-          // 重置金額與備註欄位
-          document.getElementById('exp-amount').value = '';
-          document.getElementById('exp-note').value = '';
-
-          const syncStatusEl = document.getElementById('sync-status');
-          syncStatusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> 新增成功并雙向同步`;
-          syncStatusEl.className = 'text-[10px] text-emerald-600 font-bold';
+        if (data.status === 'success' && data.members && data.members.length > 0) {
+          members = data.members;
+          expenses = data.expenses || [];
+          defaultCurrency = data.currency || 'THB';
+          syncStatusEl.innerText = '點擊可展開或收折記帳面板';
         } else {
-          throw new Error(resData.message || '寫入失敗');
+          throw new Error('回傳資料無效');
         }
       } catch (err) {
-        console.error('寫入 Google Sheet 失敗:', err);
-        alert('寫入 Google Sheet 失敗，請檢查網路連線或權限！');
+        console.warn('GAS 讀取失敗，使用離線預設備用資料:', err);
+        if (members.length === 0) members = fallbackMembers;
+        syncStatusEl.innerText = '使用離線預設成員';
       } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnText;
+        const activeMembers = members.filter(m => m.Status !== 'Left');
+        if (activeMembers.length > 0 && !selectedPayerId) {
+          selectedPayerId = activeMembers[0].MemberId;
+        }
+        if (selectedSplitters.length === 0) {
+          selectedSplitters = activeMembers.map(m => m.MemberId);
+        }
+        renderFormUI();
+        renderExpenses();
       }
     }
 
-    // 4. 渲染結算金額計算與歷史消費明細
+    // 4. 渲染表單 UI (選單與成員按鈕)
+    function renderFormUI() {
+      const payerSelect = document.getElementById('expense-payer');
+      const splittersDiv = document.getElementById('expense-splitters');
+      const activeMembers = members.filter(m => m.Status !== 'Left');
+
+      payerSelect.innerHTML = activeMembers.map(m => 
+        `<option value="${m.MemberId}" ${m.MemberId === selectedPayerId ? 'selected' : ''}>${m.Avatar} ${m.Name}</option>`
+      ).join('');
+
+      splittersDiv.innerHTML = activeMembers.map(m => {
+        const isSelected = selectedSplitters.includes(m.MemberId);
+        return `
+          <button type="button" onclick="toggleSplitter('${m.MemberId}')" class="px-2.5 py-1 text-xs rounded-full border transition-all ${
+            isSelected 
+              ? 'bg-amber-500 text-white border-amber-500 font-bold shadow-2xs' 
+              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+          }">
+            ${m.Avatar} ${m.Name}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function toggleSplitter(id) {
+      if (selectedSplitters.includes(id)) {
+        if (selectedSplitters.length === 1) return; // 至少要留一人
+        selectedSplitters = selectedSplitters.filter(sId => sId !== id);
+      } else {
+        selectedSplitters.push(id);
+      }
+      renderFormUI();
+    }
+
+    // 5. 核心：計算並渲染拆帳與個人總累積花費
     function renderExpenses() {
       const listEl = document.getElementById('expense-list');
       const summaryEl = document.getElementById('expense-summary');
@@ -657,34 +262,31 @@
       countEl.innerText = `${expenses.length} 筆`;
 
       if (expenses.length === 0) {
-        listEl.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center border border-dashed border-slate-200 rounded-lg">尚無消費明細</p>`;
-        summaryEl.innerHTML = `<p class="text-xs text-slate-500">尚無記帳資料，輸入項目後將自動為您統計結算。</p>`;
+        listEl.innerHTML = `<p class="text-xs text-slate-400 py-6 text-center border border-dashed border-slate-200 rounded-lg">尚無消費明細</p>`;
+        summaryEl.innerHTML = `<p class="text-xs text-slate-500 py-4 text-center">尚無記帳資料，輸入項目後將自動為您統計結算。</p>`;
         return;
       }
 
-      // 建立成員字典 (MemberId ➔ Member)
       const memberMap = {};
       members.forEach(m => { memberMap[m.MemberId] = m; });
-
       const currSymbol = currencySymbols[defaultCurrency] || defaultCurrency;
 
-      // 1. 渲染歷史明細
-      listEl.innerHTML = expenses.map(exp => {
+      // 渲染歷史明細 Tab
+      listEl.innerHTML = expenses.slice().reverse().map(exp => {
         const payer = memberMap[exp.PayerId] || { Name: exp.PayerId, Avatar: '👤' };
         const splitIds = (exp.SplitWith || '').split(',').filter(Boolean);
         const splitAvatars = splitIds.map(id => (memberMap[id] ? memberMap[id].Avatar : '')).join(' ');
 
         const catIconMap = { '吃': '🍔', '喝': '🍹', '車': '🚕', '其他': '🛍️' };
         const catIcon = catIconMap[exp.Category] || '📝';
-
         const twdEst = defaultCurrency === 'THB' ? `≈ NT$ ${Math.round(exp.Amount * thbToTwdRate)}` : '';
 
         return `
-          <div class="bg-white border border-slate-200/80 p-2.5 rounded-lg flex justify-between items-center text-xs shadow-sm">
+          <div class="bg-slate-50 border border-slate-200/80 p-2.5 rounded-xl flex justify-between items-center text-xs">
             <div class="flex-1 pr-2">
               <div class="font-bold text-slate-800 flex items-center gap-1.5">
                 <span>${catIcon} ${exp.Note || exp.Category}</span>
-                <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded">${exp.Category}</span>
+                <span class="text-[10px] bg-slate-200/70 text-slate-600 px-1.5 py-0.2 rounded font-normal">${exp.Category}</span>
               </div>
               <p class="text-[10px] text-slate-400 mt-0.5">
                 由 <strong class="text-slate-700">${payer.Avatar}${payer.Name}</strong> 付款 · 平分: ${splitAvatars || '所有人'}
@@ -698,57 +300,38 @@
         `;
       }).join('');
 
-      // 2. 最終結算計算機邏輯 (多成員最佳化轉帳路徑)
-      const paidMap = {};  // 各自總墊付
-      const owedMap = {};  // 各自總應付
-
-      members.forEach(m => {
-        paidMap[m.MemberId] = 0;
-        owedMap[m.MemberId] = 0;
-      });
+      // 計算各成員墊款與累積應付
+      const paidMap = {};
+      const owedMap = {};
+      members.forEach(m => { paidMap[m.MemberId] = 0; owedMap[m.MemberId] = 0; });
 
       let totalSpent = 0;
-
       expenses.forEach(exp => {
         const amt = parseFloat(exp.Amount) || 0;
         totalSpent += amt;
 
-        // 付款者先墊
-        if (paidMap[exp.PayerId] !== undefined) {
-          paidMap[exp.PayerId] += amt;
-        } else {
-          paidMap[exp.PayerId] = amt;
-        }
+        if (paidMap[exp.PayerId] !== undefined) paidMap[exp.PayerId] += amt;
+        else paidMap[exp.PayerId] = amt;
 
-        // 平分對象拆算
         const splitIds = (exp.SplitWith || '').split(',').filter(Boolean);
         if (splitIds.length > 0) {
           const splitShare = amt / splitIds.length;
           splitIds.forEach(id => {
-            if (owedMap[id] !== undefined) {
-              owedMap[id] += splitShare;
-            } else {
-              owedMap[id] = splitShare;
-            }
+            if (owedMap[id] !== undefined) owedMap[id] += splitShare;
+            else owedMap[id] = splitShare;
           });
         }
       });
 
-      // 計算每人的淨額 (Net Balance = Paid - Owed)
-      // 正數代表多付（應收款），負數代表少付（應付款）
-      const debtors = [];   // 需給錢的人
-      const creditors = []; // 應收錢的人
-
+      // 找補演算法
+      const debtors = [];
+      const creditors = [];
       Object.keys(paidMap).forEach(id => {
         const net = paidMap[id] - (owedMap[id] || 0);
-        if (net < -0.1) {
-          debtors.push({ id, amount: Math.abs(net) });
-        } else if (net > 0.1) {
-          creditors.push({ id, amount: net });
-        }
+        if (net < -0.1) debtors.push({ id, amount: Math.abs(net) });
+        else if (net > 0.1) creditors.push({ id, amount: net });
       });
 
-      // 計算最佳化找補路徑 (貪婪演算法比對)
       const transactions = [];
       let i = 0, j = 0;
       while (i < debtors.length && j < creditors.length) {
@@ -756,12 +339,7 @@
         const creditor = creditors[j];
         const minAmt = Math.min(debtor.amount, creditor.amount);
 
-        transactions.push({
-          from: debtor.id,
-          to: creditor.id,
-          amount: Math.round(minAmt)
-        });
-
+        transactions.push({ from: debtor.id, to: creditor.id, amount: Math.round(minAmt) });
         debtor.amount -= minAmt;
         creditor.amount -= minAmt;
 
@@ -769,16 +347,37 @@
         if (creditor.amount < 0.1) j++;
       }
 
-      // 渲染結算分析摘要 UI
+      // 渲染拆帳總覽 Tab
       let resultHtml = `
         <div class="mb-3 pb-2 border-b border-amber-200/60 flex justify-between items-center text-xs">
-          <span>累積總消費: <strong class="text-slate-900 text-sm">${currSymbol}${Math.round(totalSpent)}</strong> ${defaultCurrency === 'THB' ? `<span class="text-[10px] text-slate-400">(≈NT$ ${Math.round(totalSpent * thbToTwdRate)})</span>` : ''}</span>
-          <span class="text-[10px] text-slate-500">成員數: ${members.length} 人</span>
+          <span>全團總消費: <strong class="text-slate-900 text-sm">${currSymbol}${Math.round(totalSpent)}</strong> ${defaultCurrency === 'THB' ? `<span class="text-[10px] text-slate-400">(≈NT$ ${Math.round(totalSpent * thbToTwdRate)})</span>` : ''}</span>
+          <span class="text-[10px] text-slate-500">成員: ${members.length} 人</span>
         </div>
+
+        <div class="mb-3">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">個人累積應付總額 (含平分)</span>
+          <div class="grid grid-cols-2 gap-1.5">
+            ${members.map(m => {
+              const personalSpent = Math.round(owedMap[m.MemberId] || 0);
+              const twdPersonal = defaultCurrency === 'THB' ? `≈ NT$ ${Math.round(personalSpent * thbToTwdRate)}` : '';
+              return `
+                <div class="bg-amber-50/50 border border-amber-100 p-2 rounded-lg text-xs flex items-center justify-between">
+                  <span class="font-bold text-slate-700 truncate">${m.Avatar} ${m.Name}</span>
+                  <div class="text-right flex-shrink-0">
+                    <span class="font-extrabold text-amber-700 block">${currSymbol}${personalSpent}</span>
+                    ${twdPersonal ? `<span class="text-[9px] text-slate-400 block">${twdPersonal}</span>` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">建議結算找補路徑</span>
       `;
 
       if (transactions.length === 0) {
-        resultHtml += `<div class="text-xs font-bold text-emerald-700 flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> 目前所有成員帳目完美平衡，互不相欠！</div>`;
+        resultHtml += `<div class="text-xs font-bold text-emerald-700 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> 目前所有成員帳目完美平衡，互不相欠！</div>`;
       } else {
         resultHtml += `<div class="space-y-1.5">`;
         transactions.forEach(t => {
@@ -787,7 +386,7 @@
           const twdEst = defaultCurrency === 'THB' ? `(約 NT$ ${Math.round(t.amount * thbToTwdRate)})` : '';
 
           resultHtml += `
-            <div class="text-xs font-bold text-slate-800 flex items-center justify-between bg-white/80 p-2 rounded-lg border border-amber-100 shadow-2xs">
+            <div class="text-xs font-bold text-slate-800 flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-200/70">
               <div class="flex items-center gap-1.5">
                 <span>${fromMember.Avatar} <strong>${fromMember.Name}</strong></span>
                 <i class="fa-solid fa-arrow-right text-amber-500 text-[10px]"></i>
@@ -806,305 +405,75 @@
       summaryEl.innerHTML = resultHtml;
     }
 
-    // 複製文字功能
-    function copyToClipboard(text, btnElement) {
-      navigator.clipboard.writeText(text).then(() => {
-        const originalText = btnElement.innerHTML;
-        btnElement.innerHTML = `<i class="fa-solid fa-check text-emerald-600 mr-1"></i> 已複製！`;
-        btnElement.classList.add("bg-emerald-50", "text-emerald-700");
-        setTimeout(() => {
-          btnElement.innerHTML = originalText;
-          btnElement.classList.remove("bg-emerald-50", "text-emerald-700");
-        }, 2000);
-      });
-    }
+    // 6. 新增消費紀錄並寫入 GAS
+    async function addExpense() {
+      const amountInput = document.getElementById('expense-amount');
+      const noteInput = document.getElementById('expense-note');
+      const categorySelect = document.getElementById('expense-category');
 
-    // 地圖展開開關
-    function toggleMap(eventId, lat, lng, title) {
-      const container = document.getElementById(`map-container-${eventId}`);
-      const btn = document.getElementById(`map-btn-${eventId}`);
-      if (!container) return;
-
-      if (container.classList.contains('hidden')) {
-        container.classList.remove('hidden');
-        if (btn) btn.classList.add('bg-amber-100', 'text-amber-800');
-
-        if (!mapInstances[eventId]) {
-          const map = L.map(`map-${eventId}`, { attributionControl: false, zoomControl: true }).setView([lat, lng], 14);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
-          L.circle([lat, lng], { color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.15, radius: 1000 }).addTo(map);
-          L.marker([lat, lng]).addTo(map).bindPopup(`<b>${title}</b>`).openPopup();
-          mapInstances[eventId] = map;
-        }
-
-        setTimeout(() => {
-          if (mapInstances[eventId]) mapInstances[eventId].invalidateSize();
-        }, 200);
-
-      } else {
-        container.classList.add('hidden');
-        if (btn) btn.classList.remove('bg-amber-100', 'text-amber-800');
+      const amount = parseFloat(amountInput.value);
+      if (!amount || amount <= 0) {
+        alert('請輸入有效的消費金額！');
+        return;
       }
-    }
 
-    // 計算倒數天數
-    function updateCountdown() {
-      const startDate = new Date('2026-10-09T00:00:00');
-      const endDate = new Date('2026-10-17T23:59:59');
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      startDate.setHours(0, 0, 0, 0);
+      const newExpense = {
+        ExpenseId: 'E' + Date.now().toString().slice(-6),
+        Timestamp: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Bangkok' }),
+        PayerId: selectedPayerId,
+        Amount: amount,
+        Category: categorySelect.value,
+        Note: noteInput.value.trim() || categorySelect.value,
+        SplitWith: selectedSplitters.join(',')
+      };
 
-      const diffDays = Math.ceil((startDate - today) / (1000 * 60 * 60 * 24));
-      const countdownEl = document.getElementById('countdown-text');
+      // 樂觀更新 (UI 快速反應)
+      expenses.push(newExpense);
+      renderExpenses();
 
-      if (diffDays > 0) {
-        countdownEl.innerText = `距離出發還有 ${diffDays} 天`;
-      } else if (diffDays <= 0 && today <= endDate) {
-        countdownEl.innerText = `清邁之旅進行中！第 ${Math.abs(diffDays) + 1} 天`;
-      } else {
-        countdownEl.innerText = `旅程已圓滿結束`;
-      }
-    }
+      // 清空輸入框
+      amountInput.value = '';
+      noteInput.value = '';
 
-    const categoryBadgeStyles = {
-      "交通": "bg-slate-900/80 text-white",
-      "景點": "bg-emerald-600 text-white",
-      "美食": "bg-amber-500 text-white",
-      "購物": "bg-purple-600 text-white",
-      "放鬆": "bg-sky-600 text-white"
-    };
+      // 自動切換到明細列表
+      switchTab('list');
 
-    const defaultDays = [
-      { dayId: "day-1", dayLabel: "D1", date: "10/09", isoDate: "2026-10-09", fullDate: "10/09 (五)", title: "行程規劃中" },
-      { dayId: "day-2", dayLabel: "D2", date: "10/10", isoDate: "2026-10-10", fullDate: "10/10 (六)", title: "行程規劃中" },
-      { dayId: "day-3", dayLabel: "D3", date: "10/11", isoDate: "2026-10-11", fullDate: "10/11 (日)", title: "行程規劃中" },
-      { dayId: "day-4", dayLabel: "D4", date: "10/12", isoDate: "2026-10-12", fullDate: "10/12 (一)", title: "行程規劃中" },
-      { dayId: "day-5", dayLabel: "D5", date: "10/13", isoDate: "2026-10-13", fullDate: "10/13 (二)", title: "行程規劃中" },
-      { dayId: "day-6", dayLabel: "D6", date: "10/14", isoDate: "2026-10-14", fullDate: "10/14 (三)", title: "行程規劃中" },
-      { dayId: "day-7", dayLabel: "D7", date: "10/15", isoDate: "2026-10-15", fullDate: "10/15 (四)", title: "行程規劃中" },
-      { dayId: "day-8", dayLabel: "D8", date: "10/16", isoDate: "2026-10-16", fullDate: "10/16 (五)", title: "行程規劃中" },
-      { dayId: "day-9", dayLabel: "D9", date: "10/17", isoDate: "2026-10-17", fullDate: "10/17 (六)", title: "行程規劃中" }
-    ];
-
-    // 切換單日行程收折/展開 (Accordion)
-    function toggleDayAccordion(dayId, forceOpen = false) {
-      const contentEl = document.getElementById(`content-${dayId}`);
-      const iconEl = document.getElementById(`icon-${dayId}`);
-      if (!contentEl) return;
-
-      const isHidden = contentEl.classList.contains("hidden");
-
-      if (forceOpen || isHidden) {
-        contentEl.classList.remove("hidden");
-        if (iconEl) {
-          iconEl.classList.remove("fa-plus");
-          iconEl.classList.add("fa-minus");
-        }
-      } else {
-        contentEl.classList.add("hidden");
-        if (iconEl) {
-          iconEl.classList.remove("fa-minus");
-          iconEl.classList.add("fa-plus");
-        }
-      }
-    }
-
-    // 點擊頂部 Tab 時：自動展開 + 滑動到該天
-    function scrollToDayAndExpand(dayId) {
-      toggleDayAccordion(dayId, true); // 強制展開
-      const targetElement = document.getElementById(dayId);
-      if (targetElement) {
-        const yOffset = -110; // 留出 Sticky Nav 的距離
-        const y = targetElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
-        window.scrollTo({ top: y, behavior: 'smooth' });
-      }
-    }
-
-    async function fetchAndRenderItinerary() {
-      const container = document.getElementById("itinerary-container");
-      const navContainer = document.getElementById("day-nav-container");
-
+      // 同步 POST 到 Google Sheets
       try {
-        const response = await fetch(API_URL);
-        const rawData = await response.json();
-
-        // 相容處理新舊 API 回傳格式 (支援包含 itinerary/members/expenses 的物件)
-        const itineraryList = Array.isArray(rawData) ? rawData : (rawData.itinerary || []);
-
-        const daysMap = {};
-        defaultDays.forEach(d => { daysMap[d.dayId] = { ...d, events: [] }; });
-
-        if (Array.isArray(itineraryList)) {
-          itineraryList.forEach((row, idx) => {
-            const dayKey = (row.DayId || row.dayId || "").toString().toLowerCase().trim();
-            if (daysMap[dayKey]) {
-              if (row.DayTitle) daysMap[dayKey].title = row.DayTitle;
-              
-              const eventObj = {
-                id: `evt-${idx}`,
-                time: row.Time || "",
-                category: row.Category || "景點",
-                title: row.Title || "未命名行程",
-                subtitle: row.Subtitle || "",
-                address: row.Address || row.Title,
-                thaiName: row.ThaiName || "",
-                image: row.Image || "https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=600&q=80",
-                notes: row.Notes ? row.Notes.toString().split(';') : [],
-                mapUrl: row.MapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(row.Address || row.Title || "Chiang Mai")}`,
-                lat: row.Lat ? parseFloat(row.Lat) : null,
-                lng: row.Lng ? parseFloat(row.Lng) : null
-              };
-
-              daysMap[dayKey].events.push(eventObj);
-            }
-          });
-        }
-
-        container.innerHTML = "";
-        navContainer.innerHTML = "";
-
-        const allDays = Object.values(daysMap);
-
-        allDays.forEach((day, index) => {
-          // 渲染頂部導覽列按鈕
-          const wData = dailyWeatherData[day.isoDate];
-          let weatherTagHtml = '';
-          if (wData) {
-            const wInfo = getWeatherIcon(wData.weatherCode, wData.rainProb);
-            weatherTagHtml = `
-              <div class="mt-1 pt-1 border-t border-slate-200/60 flex items-center justify-center gap-1 text-[10px]">
-                <i class="fa-solid ${wInfo.icon} ${wInfo.color}"></i>
-                <span class="font-semibold text-slate-600">${wData.minTemp}°-${wData.maxTemp}°</span>
-              </div>
-            `;
-          }
-
-          const navBtn = document.createElement("button");
-          navBtn.onclick = () => scrollToDayAndExpand(day.dayId);
-          navBtn.className = "flex-shrink-0 bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 px-3.5 py-2 rounded-xl text-xs text-center font-bold transition shadow-sm";
-          navBtn.innerHTML = `
-            <div class="flex items-center justify-center gap-1">
-              <span>${day.dayLabel}</span>
-              <span class="font-normal text-[10px] text-slate-500">${day.date}</span>
-            </div>
-            ${weatherTagHtml}
-          `;
-          navContainer.appendChild(navBtn);
-
-          // 預設 D1 (index === 0) 展開，其餘收折
-          const isDefaultOpen = index === 0;
-
-          // 渲染行程卡片列表
-          let eventsHtml = "";
-          if (day.events.length === 0) {
-            eventsHtml = `<div class="bg-white p-6 rounded-xl border border-dashed border-slate-300 text-center text-slate-400 text-sm">此天尚未新增行程，開啟 Google Sheet 即可隨時填寫！</div>`;
-          } else {
-            eventsHtml = day.events.map(event => {
-              const hasCoords = event.lat && event.lng;
-              const safeTitle = escapeJsString(event.title);
-              const safeAddress = escapeJsString(event.address);
-              const safeThai = escapeJsString(event.thaiName || event.title);
-
-              return `
-                <article class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 mb-4 transition hover:shadow-lg">
-                  <div class="flex flex-col md:flex-row">
-                    <div class="md:w-1/3 h-48 md:h-auto relative bg-slate-200 flex-shrink-0">
-                      <img src="${event.image}" alt="${safeTitle}" class="w-full h-full object-cover">
-                      <span class="absolute top-3 left-3 ${categoryBadgeStyles[event.category] || "bg-slate-800 text-white"} text-xs px-2.5 py-1 rounded-md font-medium shadow-sm">
-                        ${event.category}
-                      </span>
-                    </div>
-
-                    <div class="p-5 md:w-2/3 flex flex-col justify-between flex-grow">
-                      <div>
-                        <p class="text-xs font-bold text-slate-400 mb-1">${event.time}</p>
-                        <h3 class="text-lg font-bold text-slate-800">${event.title}</h3>
-                        <p class="text-xs text-slate-500 mb-2">${event.subtitle}</p>
-
-                        <!-- 泰文大字區塊 -->
-                        ${event.thaiName ? `
-                          <div class="bg-amber-50/70 border border-amber-200/60 rounded-lg p-2.5 my-2 flex justify-between items-center">
-                            <div class="pr-2">
-                              <span class="text-[10px] text-amber-700 font-bold block">泰文名稱：</span>
-                              <p class="text-base font-black text-slate-900 leading-tight">${event.thaiName}</p>
-                            </div>
-                            <button onclick="speakThai('${safeThai}', this)" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white p-2 rounded-full flex-shrink-0 transition shadow-sm" title="朗讀泰文">
-                              <i class="fa-solid fa-volume-high text-xs"></i>
-                            </button>
-                          </div>
-                        ` : ''}
-
-                        ${event.notes.length > 0 && event.notes[0] !== "" ? `
-                          <ul class="text-xs text-slate-600 space-y-1 mb-3 list-disc list-inside bg-slate-50 p-3 rounded-lg border border-slate-100">
-                            ${event.notes.map(note => `<li>${note.trim()}</li>`).join('')}
-                          </ul>
-                        ` : ''}
-                      </div>
-
-                      <div class="flex flex-wrap gap-2 pt-3 mt-3 border-t border-slate-100">
-                        <button onclick="copyToClipboard('${safeAddress}', this)" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-md font-semibold transition flex items-center gap-1">
-                          <i class="fa-regular fa-copy"></i> 複製地址 (Grab)
-                        </button>
-                        <a href="${event.mapUrl}" target="_blank" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1">
-                          <i class="fa-solid fa-location-dot text-red-500"></i> Google Maps
-                        </a>
-                        ${hasCoords ? `
-                          <button id="map-btn-${event.id}" onclick="toggleMap('${event.id}', ${event.lat}, ${event.lng}, '${safeTitle}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1">
-                            <i class="fa-solid fa-map text-amber-500"></i> 周邊 1km 地圖
-                          </button>
-                        ` : ''}
-                      </div>
-                    </div>
-                  </div>
-
-                  ${hasCoords ? `
-                    <div id="map-container-${event.id}" class="hidden border-t border-slate-100 bg-slate-50 p-3">
-                      <div id="map-${event.id}" class="w-full h-56 rounded-lg shadow-inner"></div>
-                    </div>
-                  ` : ''}
-                </article>
-              `;
-            }).join('');
-          }
-
-          // 構建手風琴式天數區塊
-          const section = document.createElement("section");
-          section.id = day.dayId;
-          section.className = "bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden scroll-mt-28 transition";
-          
-          section.innerHTML = `
-            <!-- 可點擊收折/展開的日期標題列 -->
-            <button onclick="toggleDayAccordion('${day.dayId}')" class="w-full px-5 py-4 bg-slate-900 hover:bg-slate-800 text-white flex justify-between items-center text-left transition">
-              <div>
-                <span class="text-xs font-bold text-amber-400 tracking-wider">DAY 0${index + 1} · ${day.fullDate}</span>
-                <h2 class="text-xl font-bold text-white">${day.title}</h2>
-              </div>
-              <div class="bg-slate-800 p-2 rounded-full border border-slate-700 text-amber-400 flex items-center justify-center w-8 h-8">
-                <i id="icon-${day.dayId}" class="fa-solid ${isDefaultOpen ? 'fa-minus' : 'fa-plus'} text-sm"></i>
-              </div>
-            </button>
-
-            <!-- 折疊內容區塊 -->
-            <div id="content-${day.dayId}" class="p-4 bg-slate-50/50 space-y-4 ${isDefaultOpen ? '' : 'hidden'}">
-              ${eventsHtml}
-            </div>
-          `;
-
-          container.appendChild(section);
+        await fetch(API_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'addExpense', data: newExpense })
         });
-
-      } catch (error) {
-        console.error("載入失敗:", error);
-        container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl text-center text-sm">無法載入資料，請確認 API 存取權限。</div>`;
+      } catch (err) {
+        console.error('寫入 Google Sheet 失敗:', err);
       }
     }
 
-    // 初始化呼叫
-    updateCountdown();
-    fetchLiveExchangeRate();
-    fetchChiangMaiWeather();
-    syncExpensesFromSheet();
+    // 7. 載入基本行程資訊
+    async function fetchItinerary() {
+      const itineraryEl = document.getElementById('itinerary-list');
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          itineraryEl.innerHTML = data.map(item => `
+            <div class="border-b border-slate-100 py-2 flex justify-between items-center text-left">
+              <div>
+                <span class="font-bold text-slate-800">${item.Title || item.title || '行程活動'}</span>
+                <p class="text-[10px] text-slate-400">${item.Time || ''} ${item.Location || ''}</p>
+              </div>
+              ${item.Lat ? `<a href="${item.MapUrl || '#'}" target="_blank" class="text-indigo-500 font-bold text-[11px]"><i class="fa-solid fa-location-dot"></i> 地圖</a>` : ''}
+            </div>
+          `).join('');
+        } else {
+          itineraryEl.innerText = '尚無行程資料';
+        }
+      } catch (e) {
+        itineraryEl.innerText = '無法載入行程，請確認 API 網址';
+      }
+    }
   </script>
 </body>
 </html>
