@@ -148,7 +148,6 @@
           <h3 class="text-base font-bold text-slate-800 truncate">Art Mai Gallery Hotel</h3>
           <p class="text-xs text-slate-500 mt-0.5 mb-2">清邁阿特邁畫廊飯店 (寧曼路)</p>
           
-          <!-- 泰文大字區塊 -->
           <div class="bg-amber-50/70 border border-amber-200/60 rounded-lg p-2.5 my-2 flex justify-between items-center">
             <div class="pr-2">
               <span class="text-[10px] text-amber-700 font-bold block">給司機看泰文：</span>
@@ -172,7 +171,7 @@
     </div>
   </section>
 
-  <!-- 5. 旅費分帳 / 記帳小工具 (優化版三分類介面) -->
+  <!-- 5. 旅費分帳 / 記帳小工具 (全膠囊按鈕快捷版) -->
   <section id="expense-section" class="max-w-4xl mx-auto px-4 my-8 scroll-mt-20">
     <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden transition-all duration-300">
       
@@ -193,7 +192,7 @@
         </div>
       </button>
 
-      <!-- 2. 主體內容區域 (可收折) -->
+      <!-- 2. 主體內容區域 -->
       <div id="expense-content" class="p-4 sm:p-5">
         
         <!-- Tab 切換選單 -->
@@ -211,15 +210,17 @@
 
         <!-- Panel 1: 新增記帳表單 -->
         <div id="panel-add" class="space-y-3">
-          <div class="grid grid-cols-2 gap-2 sm:gap-3">
-            <div>
-              <label class="block text-[11px] font-bold text-slate-500 mb-1">付款人</label>
-              <select id="expense-payer" onchange="selectedPayerId = this.value" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium focus:ring-1 focus:ring-amber-500 outline-none"></select>
-            </div>
-            <div>
-              <label class="block text-[11px] font-bold text-slate-500 mb-1">金額 (THB 泰銖)</label>
-              <input type="number" id="expense-amount" placeholder="0" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 font-bold text-slate-900 focus:ring-1 focus:ring-amber-500 outline-none">
-            </div>
+          
+          <!-- 付款人直覺膠囊選擇器 -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">誰先付的？ (單選膠囊)</label>
+            <div id="expense-payer-capsules" class="flex flex-wrap gap-1.5"></div>
+          </div>
+
+          <!-- 金額輸入框 -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">金額 (THB 泰銖)</label>
+            <input type="number" id="expense-amount" placeholder="0" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold text-slate-900 focus:ring-1 focus:ring-amber-500 outline-none">
           </div>
 
           <!-- 三分類一鍵切換膠囊按鈕 -->
@@ -240,11 +241,11 @@
 
           <div>
             <label class="block text-[11px] font-bold text-slate-500 mb-1">備註/品名 (選填)</label>
-            <input type="text" id="expense-note" placeholder="例：海南雞飯、Bolt 車資" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 focus:ring-1 focus:ring-amber-500 outline-none">
+            <input type="text" id="expense-note" placeholder="例：海南雞飯、Grab 車資" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 focus:ring-1 focus:ring-amber-500 outline-none">
           </div>
 
           <div>
-            <label class="block text-[11px] font-bold text-slate-500 mb-1">平分參與人 (可複選)</label>
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">平分參與人 (複選膠囊)</label>
             <div id="expense-splitters" class="flex flex-wrap gap-1.5 py-1"></div>
           </div>
 
@@ -272,7 +273,7 @@
     <div id="day-nav-container" class="max-w-4xl mx-auto px-4 flex space-x-2 overflow-x-auto no-scrollbar"></div>
   </nav>
 
-  <!-- 7. 一頁式行程卡片區塊 (含收折功能) -->
+  <!-- 7. 一頁式行程卡片區塊 -->
   <main id="itinerary-container" class="max-w-4xl mx-auto px-4 space-y-6">
     <div id="loading-spinner" class="text-center py-12">
       <i class="fa-solid fa-circle-notch fa-spin text-3xl text-slate-400"></i>
@@ -293,21 +294,18 @@
     let defaultCurrency = 'THB';
     let selectedPayerId = '';
     let selectedSplitters = [];
-    let selectedCategory = '食物'; // 預設分類
+    let selectedCategory = '食物';
 
-    // 備用預設成員（當 GAS 尚無成員資料時使用）
     const fallbackMembers = [
       { MemberId: 'M1', Name: '兄弟 A', Avatar: '👦', Status: 'Active' },
       { MemberId: 'M2', Name: '兄弟 B', Avatar: '👨', Status: 'Active' }
     ];
 
-    // 字串安全逸出工具
     function escapeJsString(str) {
       if (!str) return '';
       return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
     }
 
-    // 🔊 泰語語音朗讀功能 (Web Speech API)
     function speakThai(text, btnElement) {
       if (!('speechSynthesis' in window)) {
         alert('您的瀏覽器不支援語音朗讀功能');
@@ -328,7 +326,6 @@
       window.speechSynthesis.speak(utterance);
     }
 
-    // 天氣圖示對照
     function getWeatherIcon(weatherCode, rainProb) {
       if (weatherCode === 0) return { icon: "fa-sun", color: "text-amber-500" };
       if (weatherCode >= 1 && weatherCode <= 3) return { icon: "fa-cloud-sun", color: "text-amber-400" };
@@ -342,7 +339,6 @@
       return { icon: "fa-sun", color: "text-amber-500" };
     }
 
-    // 抓取清邁即時與每日天氣 API
     async function fetchChiangMaiWeather() {
       const weatherContainer = document.getElementById('weather-hourly');
       const tempContainer = document.getElementById('current-temp');
@@ -397,7 +393,6 @@
       }
     }
 
-    // 抓取即時匯率 API
     async function fetchLiveExchangeRate() {
       const infoEl = document.getElementById('exchange-rate-info');
       try {
@@ -414,7 +409,6 @@
       }
     }
 
-    // 雙向匯率轉換邏輯
     function convertCurrency(source) {
       const thbInput = document.getElementById('thb-input');
       const twdInput = document.getElementById('twd-input');
@@ -430,7 +424,7 @@
       }
     }
 
-    // ------------------- 💰 優化版拆帳與分帳邏輯 -------------------
+    // ------------------- 💰 拆帳與分帳邏輯 (付款人全膠囊 UI) -------------------
 
     function selectCategory(cat) {
       selectedCategory = cat;
@@ -443,6 +437,11 @@
           btn.className = "py-2 text-xs font-bold rounded-lg border text-center transition-all bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100";
         }
       });
+    }
+
+    function selectPayer(id) {
+      selectedPayerId = id;
+      renderFormUI();
     }
 
     function toggleExpenseSection() {
@@ -514,15 +513,27 @@
       }
     }
 
+    // 動態渲染付款人膠囊與平分人膠囊
     function renderFormUI() {
-      const payerSelect = document.getElementById('expense-payer');
+      const payerCapsulesDiv = document.getElementById('expense-payer-capsules');
       const splittersDiv = document.getElementById('expense-splitters');
       const activeMembers = members.filter(m => m.Status !== 'Left');
 
-      payerSelect.innerHTML = activeMembers.map(m => 
-        `<option value="${m.MemberId}" ${m.MemberId === selectedPayerId ? 'selected' : ''}>${m.Avatar} ${m.Name}</option>`
-      ).join('');
+      // 渲染付款人膠囊 (單選)
+      payerCapsulesDiv.innerHTML = activeMembers.map(m => {
+        const isSelected = (m.MemberId === selectedPayerId);
+        return `
+          <button type="button" onclick="selectPayer('${m.MemberId}')" class="px-3 py-1.5 text-xs rounded-full border font-bold transition-all ${
+            isSelected 
+              ? 'bg-slate-900 text-amber-400 border-slate-900 shadow-sm' 
+              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+          }">
+            ${m.Avatar} ${m.Name}
+          </button>
+        `;
+      }).join('');
 
+      // 渲染平分人膠囊 (複選)
       splittersDiv.innerHTML = activeMembers.map(m => {
         const isSelected = selectedSplitters.includes(m.MemberId);
         return `
@@ -569,7 +580,7 @@
       const currSymbol = currencySymbols[defaultCurrency] || defaultCurrency;
       const catIconMap = { '食物': '🍔', '交通': '🚕', '其他': '🛍️' };
 
-      // 渲染歷史明細 Tab
+      // 歷史明細 Tab
       listEl.innerHTML = expenses.slice().reverse().map(exp => {
         const payer = memberMap[exp.PayerId] || { Name: exp.PayerId, Avatar: '👤' };
         const splitIds = (exp.SplitWith || '').split(',').filter(Boolean);
@@ -644,7 +655,7 @@
         if (creditor.amount < 0.1) j++;
       }
 
-      // 渲染拆帳總覽 Tab
+      // 拆帳總覽 Tab
       let resultHtml = `
         <div class="mb-3 pb-2 border-b border-amber-200/60 flex justify-between items-center text-xs">
           <span>全團總消費: <strong class="text-slate-900 text-sm">${currSymbol}${Math.round(totalSpent)}</strong> ${defaultCurrency === 'THB' ? `<span class="text-[10px] text-slate-400">(≈NT$ ${Math.round(totalSpent * thbToTwdRate)})</span>` : ''}</span>
@@ -743,7 +754,6 @@
       }
     }
 
-    // 複製文字功能
     function copyToClipboard(text, btnElement) {
       navigator.clipboard.writeText(text).then(() => {
         const originalText = btnElement.innerHTML;
@@ -756,7 +766,6 @@
       });
     }
 
-    // 地圖展開開關
     function toggleMap(eventId, lat, lng, title) {
       const container = document.getElementById(`map-container-${eventId}`);
       const btn = document.getElementById(`map-btn-${eventId}`);
@@ -784,7 +793,6 @@
       }
     }
 
-    // 計算倒數天數
     function updateCountdown() {
       const startDate = new Date('2026-10-09T00:00:00');
       const endDate = new Date('2026-10-17T23:59:59');
