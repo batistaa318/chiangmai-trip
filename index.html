@@ -54,7 +54,7 @@
         <i class="fa-regular fa-clock mr-1"></i> <span id="countdown-text">計算倒數中...</span>
       </div>
 
-      <p class="text-amber-400 font-semibold tracking-widest text-sm uppercase mb-2">BROTHERS TRIP · 2大人 · 9天8夜</p>
+      <p class="text-amber-400 font-semibold tracking-widest text-sm uppercase mb-2">BROTHERS TRIP · 9天8夜</p>
       <h1 class="text-3xl sm:text-4xl font-extrabold mb-3">2026清邁兄弟之旅</h1>
       <p class="text-slate-300 text-sm sm:text-base">2026 / 10 / 09 — 10 / 17 · 泰國清邁</p>
       
@@ -96,7 +96,7 @@
           <div class="relative flex-1">
             <input type="number" id="thb-input" placeholder="泰銖 THB" oninput="convertCurrency('THB')"
                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-            <span class="absolute right-2 top-2 text-xs font-bold text-slate-400">฿</span>
+            <span class="absolute right-2 top-2 text-xs font-bold text-slate-400 currency-symbol">฿</span>
           </div>
           <span class="text-xs font-bold text-slate-400">⇄</span>
           <div class="relative flex-1">
@@ -172,20 +172,22 @@
     </div>
   </section>
 
-  <!-- 5. 兄弟分帳/記帳小工具 (新功能) -->
+  <!-- 5. 旅費分帳 / 雙向同步記帳小工具 (全升級版) -->
   <section id="expense-section" class="max-w-4xl mx-auto px-4 my-8 scroll-mt-20">
     <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
       <!-- 區塊標頭 -->
       <div class="bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-4 text-white flex justify-between items-center">
         <div>
           <h2 class="text-lg font-bold flex items-center gap-2">
-            <i class="fa-solid fa-wallet"></i> 兄弟分帳 / 記帳小工具
+            <i class="fa-solid fa-wallet"></i> 旅費分帳 / 記帳小工具
           </h2>
-          <p class="text-xs text-amber-100 mt-0.5">紀錄誰先墊款，自動結算兩人最終應找補金額</p>
+          <p class="text-xs text-amber-100 mt-0.5">多成員點選、圖卡速記、Google Sheets 雙向同步</p>
         </div>
-        <button onclick="clearAllExpenses()" class="text-xs bg-amber-700/60 hover:bg-amber-800 text-white px-3 py-1.5 rounded-lg font-medium transition">
-          <i class="fa-solid fa-trash-can mr-1"></i> 清空資料
-        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="syncExpensesFromSheet()" class="text-xs bg-amber-700/60 hover:bg-amber-800 text-white px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1">
+            <i class="fa-solid fa-rotate mr-1"></i> 重新同步
+          </button>
+        </div>
       </div>
 
       <div class="p-6 grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -195,40 +197,64 @@
             <i class="fa-solid fa-pen-to-square text-amber-500"></i> 新增消費紀錄
           </h3>
           
-          <form id="expense-form" onsubmit="addExpense(event)" class="space-y-3">
+          <form id="expense-form" onsubmit="addExpense(event)" class="space-y-4">
+            <!-- 1. 付款人選取 (圖示卡片) -->
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">項目名稱</label>
-              <input type="text" id="exp-item" placeholder="例：按摩、Khao Soi 麵" required
+              <label class="block text-xs font-semibold text-slate-600 mb-1.5">誰付的錢？（點選頭像）</label>
+              <div id="payer-avatars" class="flex flex-wrap gap-2">
+                <span class="text-xs text-slate-400">載入成員中...</span>
+              </div>
+            </div>
+
+            <!-- 2. 分類選擇圖卡 (吃/喝/車/其他) -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1.5">消費分類</label>
+              <div class="grid grid-cols-4 gap-1.5" id="category-picker">
+                <button type="button" onclick="selectCategory('吃')" class="cat-btn bg-amber-500 text-white border-amber-500 py-1.5 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5">
+                  <span class="text-sm">🍔</span> 吃
+                </button>
+                <button type="button" onclick="selectCategory('喝')" class="cat-btn bg-white text-slate-700 border border-slate-200 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-100 transition flex flex-col items-center gap-0.5">
+                  <span class="text-sm">🍹</span> 喝
+                </button>
+                <button type="button" onclick="selectCategory('車')" class="cat-btn bg-white text-slate-700 border border-slate-200 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-100 transition flex flex-col items-center gap-0.5">
+                  <span class="text-sm">🚕</span> 車
+                </button>
+                <button type="button" onclick="selectCategory('其他')" class="cat-btn bg-white text-slate-700 border border-slate-200 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-100 transition flex flex-col items-center gap-0.5">
+                  <span class="text-sm">🛍️</span> 其他
+                </button>
+              </div>
+            </div>
+
+            <!-- 3. 文字備註 -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">文字備註（選填）</label>
+              <input type="text" id="exp-note" placeholder="例：鳳飛飛豬腳飯、Grab 到寧曼路"
                      class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500">
             </div>
 
+            <!-- 4. 金額輸入 (iPhone 數字鍵盤) -->
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">金額 (泰銖 THB)</label>
-              <input type="number" id="exp-amount" placeholder="฿0" min="1" step="any" required
-                     class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500">
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">誰先付的？</label>
-                <select id="exp-payer" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500">
-                  <option value="A">兄弟 A</option>
-                  <option value="B">兄弟 B</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">給誰分攤？</label>
-                <select id="exp-split" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500">
-                  <option value="BOTH">兩人平分 (1/2)</option>
-                  <option value="A">僅兄弟 A 自付</option>
-                  <option value="B">僅兄弟 B 自付</option>
-                </select>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">金額 (<span class="currency-code">THB</span>)</label>
+              <div class="relative">
+                <input type="number" inputmode="decimal" id="exp-amount" placeholder="0" min="0.1" step="any" required
+                       class="w-full bg-white border border-slate-200 rounded-lg pl-3 pr-10 py-2 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                <span class="absolute right-3 top-2 text-xs font-bold text-slate-400 currency-symbol">฿</span>
               </div>
             </div>
 
-            <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold py-2.5 rounded-lg text-xs transition shadow-sm mt-2 flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-plus"></i> 新增此筆記帳
+            <!-- 5. 平分對象選取 (多選頭像) -->
+            <div>
+              <div class="flex justify-between items-center mb-1.5">
+                <label class="block text-xs font-semibold text-slate-600">誰要平分這筆錢？</label>
+                <button type="button" onclick="toggleSelectAllSplitters()" class="text-[10px] text-amber-600 font-bold hover:underline">全選 / 清空</button>
+              </div>
+              <div id="split-avatars" class="flex flex-wrap gap-2">
+                <span class="text-xs text-slate-400">載入成員中...</span>
+              </div>
+            </div>
+
+            <button type="submit" id="submit-exp-btn" class="w-full bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold py-2.5 rounded-lg text-xs transition shadow-sm mt-2 flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-cloud-arrow-up"></i> 新增並同步至 Google Sheet
             </button>
           </form>
         </div>
@@ -237,20 +263,23 @@
         <div class="md:col-span-7 flex flex-col justify-between space-y-4">
           <!-- 結算分析看板 -->
           <div class="bg-amber-50/60 border border-amber-200/80 rounded-xl p-4">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-amber-800 block mb-2">結算結果分析</span>
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-amber-800 block">最終結算計算機</span>
+              <span id="sync-status" class="text-[10px] text-emerald-600 font-bold"><i class="fa-solid fa-arrows-rotate fa-spin"></i> 同步中...</span>
+            </div>
             <div id="expense-summary" class="text-slate-800">
-              <p class="text-xs text-slate-500">尚無記帳資料，輸入項目後將自動為您統計結算。</p>
+              <p class="text-xs text-slate-500">正在計算結算資訊...</p>
             </div>
           </div>
 
           <!-- 歷史消費紀錄清單 -->
           <div class="flex-1">
             <h4 class="text-xs font-bold text-slate-500 mb-2 flex justify-between items-center">
-              <span>歷史明細</span>
+              <span>歷史消費明細</span>
               <span id="expense-count" class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">0 筆</span>
             </h4>
-            <div id="expense-list" class="max-h-48 overflow-y-auto space-y-2 pr-1 no-scrollbar">
-              <!-- 動態渲染明細 -->
+            <div id="expense-list" class="max-h-60 overflow-y-auto space-y-2 pr-1 no-scrollbar">
+              <div class="text-xs text-slate-400 py-4 text-center border border-dashed border-slate-200 rounded-lg">載入明細中...</div>
             </div>
           </div>
         </div>
@@ -277,7 +306,25 @@
     const mapInstances = {};
     let thbToTwdRate = 0.92;
     let dailyWeatherData = {}; 
-    let expenses = JSON.parse(localStorage.getItem('chiangmai_expenses') || '[]');
+    
+    // 💰 拆帳系統狀態管理
+    let members = [];            // 成員清單 [{MemberId: 'M1', Name: '小明', Avatar: '👦', Status: 'Active'}]
+    let expenses = [];           // 記帳明細
+    let defaultCurrency = 'THB'; // 預設幣別 (來自 Members!F1)
+    let selectedPayerId = '';    // 目前選取的付款人 MemberId
+    let selectedCategory = '吃';  // 目前選取的分類
+    let selectedSplitters = [];  // 目前選取的平分對象 MemberId 陣列
+
+    // 幣別符號映射表
+    const currencySymbols = {
+      'THB': '฿',
+      'JPY': '¥',
+      'KRW': '₩',
+      'TWD': 'NT$',
+      'USD': '$',
+      'EUR': '€',
+      'HKD': 'HK$'
+    };
 
     // 字串安全逸出工具
     function escapeJsString(str) {
@@ -408,54 +455,200 @@
       }
     }
 
-    // ------------------- 💰 記帳與分帳核心邏輯 -------------------
+    // ------------------- 💰 Google Sheets 雙向同步拆帳核心邏輯 -------------------
 
-    function addExpense(e) {
-      e.preventDefault();
-      const item = document.getElementById('exp-item').value.trim();
-      const amount = parseFloat(document.getElementById('exp-amount').value);
-      const payer = document.getElementById('exp-payer').value;
-      const split = document.getElementById('exp-split').value;
+    // 1. 從 Google Sheets (GAS) 載入拆帳資料 (Members, Expenses, Currency)
+    async function syncExpensesFromSheet() {
+      const syncStatusEl = document.getElementById('sync-status');
+      syncStatusEl.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> 同步中...`;
+      syncStatusEl.className = 'text-[10px] text-amber-600 font-bold';
 
-      if (!item || isNaN(amount) || amount <= 0) return;
+      try {
+        const res = await fetch(`${API_URL}?action=getExpensesData`);
+        const data = await res.json();
 
-      const newExpense = {
-        id: Date.now(),
-        item,
-        amount,
-        payer,
-        split,
-        date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
+        if (data.status === 'success') {
+          members = data.members || [];
+          expenses = data.expenses || [];
+          defaultCurrency = data.currency || 'THB';
 
-      expenses.unshift(newExpense);
-      saveExpenses();
-      renderExpenses();
+          // 更新幣別符號 UI
+          const symbol = currencySymbols[defaultCurrency] || defaultCurrency;
+          document.querySelectorAll('.currency-symbol').forEach(el => el.innerText = symbol);
+          document.querySelectorAll('.currency-code').forEach(el => el.innerText = defaultCurrency);
 
-      // 重置表單
-      document.getElementById('exp-item').value = '';
-      document.getElementById('exp-amount').value = '';
-    }
+          // 預設全選在隊成員為平分對象，並設定第一個人為預設付款人
+          const activeMembers = members.filter(m => m.Status !== 'Left');
+          if (activeMembers.length > 0 && !selectedPayerId) {
+            selectedPayerId = activeMembers[0].MemberId;
+          }
+          selectedSplitters = activeMembers.map(m => m.MemberId);
 
-    function deleteExpense(id) {
-      expenses = expenses.filter(exp => exp.id !== id);
-      saveExpenses();
-      renderExpenses();
-    }
+          renderFormUI();
+          renderExpenses();
 
-    function clearAllExpenses() {
-      if (expenses.length === 0) return;
-      if (confirm("確定要清空所有記帳紀錄嗎？")) {
-        expenses = [];
-        saveExpenses();
-        renderExpenses();
+          syncStatusEl.innerHTML = `<i class="fa-solid fa-check"></i> 已同步最新試算表`;
+          syncStatusEl.className = 'text-[10px] text-emerald-600 font-bold';
+        } else {
+          throw new Error(data.message || '讀取失敗');
+        }
+      } catch (err) {
+        console.error('同步拆帳資料失敗:', err);
+        syncStatusEl.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> 使用離線/本地快取`;
+        syncStatusEl.className = 'text-[10px] text-rose-500 font-bold';
       }
     }
 
-    function saveExpenses() {
-      localStorage.setItem('chiangmai_expenses', JSON.stringify(expenses));
+    // 2. 渲染表單上的「付款人」與「平分對象」頭像選擇器
+    function renderFormUI() {
+      const payerAvatarsContainer = document.getElementById('payer-avatars');
+      const splitAvatarsContainer = document.getElementById('split-avatars');
+
+      const activeMembers = members.filter(m => m.Status !== 'Left');
+
+      // (A) 渲染付款人 (單選)
+      payerAvatarsContainer.innerHTML = activeMembers.map(m => {
+        const isSelected = m.MemberId === selectedPayerId;
+        return `
+          <button type="button" onclick="selectPayer('${m.MemberId}')"
+                  class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border transition text-xs font-bold ${
+                    isSelected ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                  }">
+            <span class="text-base">${m.Avatar || '👤'}</span>
+            <span>${m.Name}</span>
+          </button>
+        `;
+      }).join('');
+
+      // (B) 渲染平分對象 (多選)
+      splitAvatarsContainer.innerHTML = activeMembers.map(m => {
+        const isSelected = selectedSplitters.includes(m.MemberId);
+        return `
+          <button type="button" onclick="toggleSplitter('${m.MemberId}')"
+                  class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border transition text-xs font-bold ${
+                    isSelected ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-white text-slate-400 border-slate-200 opacity-60'
+                  }">
+            <span class="text-base">${m.Avatar || '👤'}</span>
+            <span>${m.Name}</span>
+            <i class="fa-solid ${isSelected ? 'fa-check text-[10px]' : 'fa-plus text-[10px]'}"></i>
+          </button>
+        `;
+      }).join('');
     }
 
+    // 切換付款人
+    function selectPayer(memberId) {
+      selectedPayerId = memberId;
+      renderFormUI();
+    }
+
+    // 切換平分對象勾選
+    function toggleSplitter(memberId) {
+      if (selectedSplitters.includes(memberId)) {
+        selectedSplitters = selectedSplitters.filter(id => id !== memberId);
+      } else {
+        selectedSplitters.push(memberId);
+      }
+      renderFormUI();
+    }
+
+    // 全選/取消全選平分對象
+    function toggleSelectAllSplitters() {
+      const activeMemberIds = members.filter(m => m.Status !== 'Left').map(m => m.MemberId);
+      if (selectedSplitters.length === activeMemberIds.length) {
+        selectedSplitters = [];
+      } else {
+        selectedSplitters = [...activeMemberIds];
+      }
+      renderFormUI();
+    }
+
+    // 切換分類圖卡 (吃/喝/車/其他)
+    function selectCategory(cat) {
+      selectedCategory = cat;
+      const catBtns = document.querySelectorAll('.cat-btn');
+      catBtns.forEach(btn => {
+        if (btn.innerText.includes(cat)) {
+          btn.className = 'cat-btn bg-amber-500 text-white border-amber-500 py-1.5 rounded-lg text-xs font-bold transition flex flex-col items-center gap-0.5 shadow-sm';
+        } else {
+          btn.className = 'cat-btn bg-white text-slate-700 border border-slate-200 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-100 transition flex flex-col items-center gap-0.5';
+        }
+      });
+    }
+
+    // 3. 新增消費紀錄 (同步發送到 Google Sheets API)
+    async function addExpense(e) {
+      e.preventDefault();
+      const amount = parseFloat(document.getElementById('exp-amount').value);
+      const note = document.getElementById('exp-note').value.trim();
+
+      if (isNaN(amount) || amount <= 0) {
+        alert('請輸入有效的金額！');
+        return;
+      }
+
+      if (!selectedPayerId) {
+        alert('請選擇誰是付款人！');
+        return;
+      }
+
+      if (selectedSplitters.length === 0) {
+        alert('請至少選擇一位平分對象！');
+        return;
+      }
+
+      const submitBtn = document.getElementById('submit-exp-btn');
+      const originalBtnText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 正在寫入 Google Sheet...`;
+
+      const newExpense = {
+        ExpenseId: 'EXP-' + Date.now().toString().slice(-6),
+        Timestamp: new Date().toLocaleString('sv-SE'), // YYYY-MM-DD HH:mm
+        PayerId: selectedPayerId,
+        Amount: amount,
+        Category: selectedCategory,
+        Note: note || selectedCategory,
+        SplitWith: selectedSplitters.join(',')
+      };
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'addExpense',
+            data: newExpense
+          })
+        });
+
+        const resData = await response.json();
+
+        if (resData.status === 'success') {
+          // 本地更新並重新渲染
+          expenses.unshift(newExpense);
+          renderExpenses();
+
+          // 重置金額與備註欄位
+          document.getElementById('exp-amount').value = '';
+          document.getElementById('exp-note').value = '';
+
+          const syncStatusEl = document.getElementById('sync-status');
+          syncStatusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> 新增成功并雙向同步`;
+          syncStatusEl.className = 'text-[10px] text-emerald-600 font-bold';
+        } else {
+          throw new Error(resData.message || '寫入失敗');
+        }
+      } catch (err) {
+        console.error('寫入 Google Sheet 失敗:', err);
+        alert('寫入 Google Sheet 失敗，請檢查網路連線或權限！');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+      }
+    }
+
+    // 4. 渲染結算金額計算與歷史消費明細
     function renderExpenses() {
       const listEl = document.getElementById('expense-list');
       const summaryEl = document.getElementById('expense-summary');
@@ -469,85 +662,145 @@
         return;
       }
 
+      // 建立成員字典 (MemberId ➔ Member)
+      const memberMap = {};
+      members.forEach(m => { memberMap[m.MemberId] = m; });
+
+      const currSymbol = currencySymbols[defaultCurrency] || defaultCurrency;
+
       // 1. 渲染歷史明細
       listEl.innerHTML = expenses.map(exp => {
-        const twdEst = Math.round(exp.amount * thbToTwdRate);
-        const splitText = exp.split === 'BOTH' ? '平分' : (exp.split === 'A' ? 'A獨享' : 'B獨享');
+        const payer = memberMap[exp.PayerId] || { Name: exp.PayerId, Avatar: '👤' };
+        const splitIds = (exp.SplitWith || '').split(',').filter(Boolean);
+        const splitAvatars = splitIds.map(id => (memberMap[id] ? memberMap[id].Avatar : '')).join(' ');
+
+        const catIconMap = { '吃': '🍔', '喝': '🍹', '車': '🚕', '其他': '🛍️' };
+        const catIcon = catIconMap[exp.Category] || '📝';
+
+        const twdEst = defaultCurrency === 'THB' ? `≈ NT$ ${Math.round(exp.Amount * thbToTwdRate)}` : '';
+
         return `
           <div class="bg-white border border-slate-200/80 p-2.5 rounded-lg flex justify-between items-center text-xs shadow-sm">
             <div class="flex-1 pr-2">
               <div class="font-bold text-slate-800 flex items-center gap-1.5">
-                <span>${exp.item}</span>
-                <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded">${splitText}</span>
+                <span>${catIcon} ${exp.Note || exp.Category}</span>
+                <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded">${exp.Category}</span>
               </div>
-              <p class="text-[10px] text-slate-400 mt-0.5">由 <strong class="text-slate-600">兄弟 ${exp.payer}</strong> 先付 · ${exp.date}</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">
+                由 <strong class="text-slate-700">${payer.Avatar}${payer.Name}</strong> 付款 · 平分: ${splitAvatars || '所有人'}
+              </p>
             </div>
-            <div class="text-right flex items-center gap-3">
-              <div>
-                <span class="font-extrabold text-slate-900 block">฿${exp.amount}</span>
-                <span class="text-[10px] text-slate-400 block">≈ NT$ ${twdEst}</span>
-              </div>
-              <button onclick="deleteExpense(${exp.id})" class="text-slate-300 hover:text-red-500 p-1 transition" title="刪除">
-                <i class="fa-solid fa-xmark"></i>
-              </button>
+            <div class="text-right">
+              <span class="font-extrabold text-slate-900 block">${currSymbol}${exp.Amount}</span>
+              ${twdEst ? `<span class="text-[10px] text-slate-400 block">${twdEst}</span>` : ''}
             </div>
           </div>
         `;
       }).join('');
 
-      // 2. 結算金額計算
-      let paidA = 0, paidB = 0; // 兩人各自先墊的錢
-      let oweA = 0, oweB = 0;   // 兩人各自應負擔的總額
+      // 2. 最終結算計算機邏輯 (多成員最佳化轉帳路徑)
+      const paidMap = {};  // 各自總墊付
+      const owedMap = {};  // 各自總應付
+
+      members.forEach(m => {
+        paidMap[m.MemberId] = 0;
+        owedMap[m.MemberId] = 0;
+      });
+
+      let totalSpent = 0;
 
       expenses.forEach(exp => {
-        const amt = exp.amount;
-        if (exp.payer === 'A') paidA += amt;
-        if (exp.payer === 'B') paidB += amt;
+        const amt = parseFloat(exp.Amount) || 0;
+        totalSpent += amt;
 
-        if (exp.split === 'BOTH') {
-          oweA += amt / 2;
-          oweB += amt / 2;
-        } else if (exp.split === 'A') {
-          oweA += amt;
-        } else if (exp.split === 'B') {
-          oweB += amt;
+        // 付款者先墊
+        if (paidMap[exp.PayerId] !== undefined) {
+          paidMap[exp.PayerId] += amt;
+        } else {
+          paidMap[exp.PayerId] = amt;
+        }
+
+        // 平分對象拆算
+        const splitIds = (exp.SplitWith || '').split(',').filter(Boolean);
+        if (splitIds.length > 0) {
+          const splitShare = amt / splitIds.length;
+          splitIds.forEach(id => {
+            if (owedMap[id] !== undefined) {
+              owedMap[id] += splitShare;
+            } else {
+              owedMap[id] = splitShare;
+            }
+          });
         }
       });
 
-      const totalSpent = paidA + paidB;
-      const netA = paidA - oweA; // 正值表示多付(別人應給他)，負值表示少付(他應給別人)
+      // 計算每人的淨額 (Net Balance = Paid - Owed)
+      // 正數代表多付（應收款），負數代表少付（應付款）
+      const debtors = [];   // 需給錢的人
+      const creditors = []; // 應收錢的人
 
+      Object.keys(paidMap).forEach(id => {
+        const net = paidMap[id] - (owedMap[id] || 0);
+        if (net < -0.1) {
+          debtors.push({ id, amount: Math.abs(net) });
+        } else if (net > 0.1) {
+          creditors.push({ id, amount: net });
+        }
+      });
+
+      // 計算最佳化找補路徑 (貪婪演算法比對)
+      const transactions = [];
+      let i = 0, j = 0;
+      while (i < debtors.length && j < creditors.length) {
+        const debtor = debtors[i];
+        const creditor = creditors[j];
+        const minAmt = Math.min(debtor.amount, creditor.amount);
+
+        transactions.push({
+          from: debtor.id,
+          to: creditor.id,
+          amount: Math.round(minAmt)
+        });
+
+        debtor.amount -= minAmt;
+        creditor.amount -= minAmt;
+
+        if (debtor.amount < 0.1) i++;
+        if (creditor.amount < 0.1) j++;
+      }
+
+      // 渲染結算分析摘要 UI
       let resultHtml = `
-        <div class="grid grid-cols-2 gap-2 text-xs mb-3 pb-3 border-b border-amber-200/60">
-          <div><span class="text-slate-500">總消費:</span> <strong class="text-slate-900 text-sm">฿${totalSpent}</strong> <span class="text-[10px] text-slate-400">(≈NT$ ${Math.round(totalSpent * thbToTwdRate)})</span></div>
-          <div class="text-right"><span class="text-slate-500">兄弟 A 墊付:</span> <strong>฿${paidA}</strong> | <span class="text-slate-500">B 墊付:</span> <strong>฿${paidB}</strong></div>
+        <div class="mb-3 pb-2 border-b border-amber-200/60 flex justify-between items-center text-xs">
+          <span>累積總消費: <strong class="text-slate-900 text-sm">${currSymbol}${Math.round(totalSpent)}</strong> ${defaultCurrency === 'THB' ? `<span class="text-[10px] text-slate-400">(≈NT$ ${Math.round(totalSpent * thbToTwdRate)})</span>` : ''}</span>
+          <span class="text-[10px] text-slate-500">成員數: ${members.length} 人</span>
         </div>
       `;
 
-      if (Math.abs(netA) < 0.1) {
-        resultHtml += `<div class="text-xs font-bold text-emerald-700 flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> 目前兩位帳目完美平衡，互不相欠！</div>`;
-      } else if (netA > 0) {
-        const diffTHB = Math.round(netA);
-        const diffTWD = Math.round(diffTHB * thbToTwdRate);
-        resultHtml += `
-          <div class="text-xs font-bold text-amber-900 flex items-center gap-2">
-            <i class="fa-solid fa-arrow-right-arrow-left text-amber-600"></i>
-            <span><strong>兄弟 B</strong> 應給 <strong>兄弟 A</strong>：</span>
-            <span class="text-base text-rose-600 font-extrabold">฿ ${diffTHB}</span>
-            <span class="text-xs text-slate-500 font-normal">(約 NT$ ${diffTWD})</span>
-          </div>
-        `;
+      if (transactions.length === 0) {
+        resultHtml += `<div class="text-xs font-bold text-emerald-700 flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> 目前所有成員帳目完美平衡，互不相欠！</div>`;
       } else {
-        const diffTHB = Math.round(Math.abs(netA));
-        const diffTWD = Math.round(diffTHB * thbToTwdRate);
-        resultHtml += `
-          <div class="text-xs font-bold text-amber-900 flex items-center gap-2">
-            <i class="fa-solid fa-arrow-right-arrow-left text-amber-600"></i>
-            <span><strong>兄弟 A</strong> 應給 <strong>兄弟 B</strong>：</span>
-            <span class="text-base text-rose-600 font-extrabold">฿ ${diffTHB}</span>
-            <span class="text-xs text-slate-500 font-normal">(約 NT$ ${diffTWD})</span>
-          </div>
-        `;
+        resultHtml += `<div class="space-y-1.5">`;
+        transactions.forEach(t => {
+          const fromMember = memberMap[t.from] || { Name: t.from, Avatar: '👤' };
+          const toMember = memberMap[t.to] || { Name: t.to, Avatar: '👤' };
+          const twdEst = defaultCurrency === 'THB' ? `(約 NT$ ${Math.round(t.amount * thbToTwdRate)})` : '';
+
+          resultHtml += `
+            <div class="text-xs font-bold text-slate-800 flex items-center justify-between bg-white/80 p-2 rounded-lg border border-amber-100 shadow-2xs">
+              <div class="flex items-center gap-1.5">
+                <span>${fromMember.Avatar} <strong>${fromMember.Name}</strong></span>
+                <i class="fa-solid fa-arrow-right text-amber-500 text-[10px]"></i>
+                <span>${toMember.Avatar} <strong>${toMember.Name}</strong></span>
+              </div>
+              <div class="text-right">
+                <span class="text-rose-600 font-extrabold text-sm">${currSymbol}${t.amount}</span>
+                <span class="text-[10px] text-slate-400 font-normal ml-0.5">${twdEst}</span>
+              </div>
+            </div>
+          `;
+        });
+        resultHtml += `</div>`;
       }
 
       summaryEl.innerHTML = resultHtml;
@@ -676,11 +929,14 @@
         const response = await fetch(API_URL);
         const rawData = await response.json();
 
+        // 相容處理新舊 API 回傳格式 (支援包含 itinerary/members/expenses 的物件)
+        const itineraryList = Array.isArray(rawData) ? rawData : (rawData.itinerary || []);
+
         const daysMap = {};
         defaultDays.forEach(d => { daysMap[d.dayId] = { ...d, events: [] }; });
 
-        if (Array.isArray(rawData)) {
-          rawData.forEach((row, idx) => {
+        if (Array.isArray(itineraryList)) {
+          itineraryList.forEach((row, idx) => {
             const dayKey = (row.DayId || row.dayId || "").toString().toLowerCase().trim();
             if (daysMap[dayKey]) {
               if (row.DayTitle) daysMap[dayKey].title = row.DayTitle;
@@ -848,7 +1104,7 @@
     updateCountdown();
     fetchLiveExchangeRate();
     fetchChiangMaiWeather();
-    renderExpenses();
+    syncExpensesFromSheet();
   </script>
 </body>
 </html>
