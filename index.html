@@ -6,7 +6,7 @@
   <title>2026清邁兄弟之旅</title>
 
   <!-- PWA 設定 -->
-  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIjIwMjYg4LmA4LiK4Li14Lii4LmJ4LiZ4Lij4LmI4LmA4LiB4LiiIiwKICAic2hvcnRfbmFtZSI6ICIyMDI24LmA4LiK4Li14LiiIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwZjE3MmEiLAogICJ0aGVtZV9jb2xvciI6ICIjMGYxNzJhIgp9">
+  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIjIwMjYg4LmA4LiK4Li14Lii4LmJ4LiZ4Lij4LmI4LmA4LiB4LiiIiwKICAic2hvcnRfbmFtZSI6ICIyMDI24LmA4LiK4Li14LiiIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogI2NmMTcyYSIsCiAgInRoZW1lX2NvbG9yIjogIiMwZjE3MmEiCn0=">
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,6 +18,8 @@
   <!-- Leaflet.js 免費互動地圖套件 -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Supabase JS SDK CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -55,7 +57,7 @@
       </div>
 
       <p class="text-amber-400 font-semibold tracking-widest text-sm uppercase mb-2">BROTHERS TRIP · 2大人 · 9天8夜</p>
-      <h1 class="text-3xl sm:text-4xl font-extrabold mb-3">2026清邁兄弟之旅</h1>
+      <h1 class="text-3xl sm:text-4xl font-extrabold mb-3" id="trip-main-title">2026清邁兄弟之旅</h1>
       <p class="text-slate-300 text-sm sm:text-base">2026 / 10 / 09 — 10 / 17 · 泰國清邁</p>
       
       <div class="flex flex-wrap justify-center gap-2 mt-6 text-xs text-slate-300">
@@ -171,7 +173,7 @@
     </div>
   </section>
 
-  <!-- 5. 旅費分帳 / 記帳小工具 (全膠囊按鈕快捷版) -->
+  <!-- 5. 旅費分帳 / 記帳小工具 -->
   <section id="expense-section" class="max-w-4xl mx-auto px-4 my-8 scroll-mt-20">
     <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden transition-all duration-300">
       
@@ -183,7 +185,7 @@
           </div>
           <div>
             <h3 class="font-bold text-white text-sm sm:text-base leading-tight">旅費分帳 / 記帳小工具</h3>
-            <p class="text-[11px] text-slate-400 mt-0.5" id="sync-status">點擊可展開或收折記帳面板</p>
+            <p class="text-[11px] text-slate-400 mt-0.5" id="sync-status">直接同步至 Supabase 資料庫</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
@@ -210,32 +212,22 @@
 
         <!-- Panel 1: 新增記帳表單 -->
         <div id="panel-add" class="space-y-3">
-          
-          <!-- 付款人直覺膠囊選擇器 -->
           <div>
             <label class="block text-[11px] font-bold text-slate-500 mb-1">誰先付的？ (單選膠囊)</label>
             <div id="expense-payer-capsules" class="flex flex-wrap gap-1.5"></div>
           </div>
 
-          <!-- 金額輸入框 -->
           <div>
             <label class="block text-[11px] font-bold text-slate-500 mb-1">金額 (THB 泰銖)</label>
             <input type="number" id="expense-amount" placeholder="0" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold text-slate-900 focus:ring-1 focus:ring-amber-500 outline-none">
           </div>
 
-          <!-- 三分類一鍵切換膠囊按鈕 -->
           <div>
             <label class="block text-[11px] font-bold text-slate-500 mb-1">消費分類</label>
             <div id="category-selector" class="grid grid-cols-3 gap-1.5">
-              <button type="button" onclick="selectCategory('食物')" id="cat-btn-食物" class="py-2 text-xs font-bold rounded-lg border text-center transition-all bg-amber-500 text-white border-amber-500 shadow-2xs">
-                🍔 食物
-              </button>
-              <button type="button" onclick="selectCategory('交通')" id="cat-btn-交通" class="py-2 text-xs font-bold rounded-lg border text-center transition-all bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100">
-                🚕 交通
-              </button>
-              <button type="button" onclick="selectCategory('其他')" id="cat-btn-其他" class="py-2 text-xs font-bold rounded-lg border text-center transition-all bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100">
-                🛍️ 其他
-              </button>
+              <button type="button" onclick="selectCategory('食物')" id="cat-btn-食物" class="py-2 text-xs font-bold rounded-lg border text-center transition-all bg-amber-500 text-white border-amber-500 shadow-2xs">🍔 食物</button>
+              <button type="button" onclick="selectCategory('交通')" id="cat-btn-交通" class="py-2 text-xs font-bold rounded-lg border text-center transition-all bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100">🚕 交通</button>
+              <button type="button" onclick="selectCategory('其他')" id="cat-btn-其他" class="py-2 text-xs font-bold rounded-lg border text-center transition-all bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100">🛍️ 其他</button>
             </div>
           </div>
 
@@ -250,11 +242,11 @@
           </div>
 
           <button onclick="addExpense()" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-lg shadow-sm transition-all active:scale-[0.99] flex items-center justify-center gap-1.5 mt-2">
-            <i class="fa-solid fa-check"></i> 儲存並同步到 Google Sheet
+            <i class="fa-solid fa-check"></i> 儲存並同步到 Supabase
           </button>
         </div>
 
-        <!-- Panel 2: 拆帳與累積金額總覽 -->
+        <!-- Panel 2: 拆帳總覽 -->
         <div id="panel-summary" class="hidden">
           <div id="expense-summary"></div>
         </div>
@@ -268,38 +260,145 @@
     </div>
   </section>
 
-  <!-- 6. 快速跳轉 Tab 導覽列 -->
+  <!-- 6. 快速跳轉與管理模式 Tab -->
   <nav class="sticky top-12 z-40 bg-white/90 backdrop-blur border-b border-slate-200 py-2 my-8 shadow-sm">
-    <div id="day-nav-container" class="max-w-4xl mx-auto px-4 flex space-x-2 overflow-x-auto no-scrollbar"></div>
+    <div class="max-w-4xl mx-auto px-4 flex justify-between items-center">
+      <div id="day-nav-container" class="flex space-x-2 overflow-x-auto no-scrollbar flex-1 pr-2"></div>
+      
+      <!-- 前台 Admin 編輯模式切換鈕 -->
+      <button onclick="toggleAdminPanel()" id="admin-toggle-btn" class="flex-shrink-0 bg-slate-900 text-amber-400 font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1 shadow-sm">
+        <i class="fa-solid fa-gear"></i> 管理行程
+      </button>
+    </div>
   </nav>
+
+  <!-- ⚙️ 前台 Admin 手機編輯面板 (預設隱藏) -->
+  <section id="admin-panel" class="max-w-4xl mx-auto px-4 mb-8 hidden">
+    <div class="bg-amber-50/80 border-2 border-amber-400 rounded-2xl p-5 shadow-lg">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square text-amber-600"></i> ⚙️ 前台 Admin 行程快速新增 / 編輯
+        </h3>
+        <button onclick="toggleAdminPanel()" class="text-xs text-slate-400 font-bold hover:text-slate-700">關閉 ✕</button>
+      </div>
+
+      <form id="admin-form" onsubmit="handleSaveItinerary(event)" class="space-y-3">
+        <input type="hidden" id="edit-item-id" value="">
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">天數 (Day)</label>
+            <select id="admin-day-id" class="w-full text-xs bg-white border border-slate-300 rounded-lg p-2 font-bold focus:ring-2 focus:ring-amber-500">
+              <option value="day-1">Day 1 (10/09)</option>
+              <option value="day-2">Day 2 (10/10)</option>
+              <option value="day-3">Day 3 (10/11)</option>
+              <option value="day-4">Day 4 (10/12)</option>
+              <option value="day-5">Day 5 (10/13)</option>
+              <option value="day-6">Day 6 (10/14)</option>
+              <option value="day-7">Day 7 (10/15)</option>
+              <option value="day-8">Day 8 (10/16)</option>
+              <option value="day-9">Day 9 (10/17)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">時間 (例: 09:30)</label>
+            <input type="text" id="admin-time" placeholder="09:30" required class="w-full text-xs bg-white border border-slate-300 rounded-lg p-2 font-bold">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">景點 / 餐廳名稱</label>
+            <input type="text" id="admin-title" placeholder="例: Art Mai Hotel" required class="w-full text-xs bg-white border border-slate-300 rounded-lg p-2 font-bold">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">分類 Badge</label>
+            <select id="admin-category" class="w-full text-xs bg-white border border-slate-300 rounded-lg p-2 font-bold">
+              <option value="景點">景點</option>
+              <option value="美食">美食</option>
+              <option value="交通">交通</option>
+              <option value="購物">購物</option>
+              <option value="放鬆">放鬆</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">當地語言 / 泰文名稱 (給司機看)</label>
+            <input type="text" id="admin-thai-name" placeholder="例: โรงแรมอาร์ต ไหม แกลเลอรี" class="w-full text-xs bg-white border border-slate-300 rounded-lg p-2">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">英文或中文地址 (Grab 用)</label>
+            <input type="text" id="admin-address" placeholder="例: Nimman Road, Chiang Mai" class="w-full text-xs bg-white border border-slate-300 rounded-lg p-2">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 mb-1">圖片網址 (Unsplash 或圖片連結)</label>
+          <input type="text" id="admin-image-url" placeholder="https://images.unsplash.com/..." class="w-full text-xs bg-white border border-slate-300 rounded-lg p-2">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 mb-1">備註 (多項用分號 ';' 隔開)</label>
+          <input type="text" id="admin-notes" placeholder="例: 必點泰式奶茶; 建議提早 10 分鐘抵達" class="w-full text-xs bg-white border border-slate-300 rounded-lg p-2">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">緯度 Lat (選填，互動地圖用)</label>
+            <input type="number" step="any" id="admin-lat" placeholder="18.7883" class="w-full text-xs bg-white border border-slate-300 rounded-lg p-2">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">經度 Lng (選填，互動地圖用)</label>
+            <input type="number" step="any" id="admin-lng" placeholder="98.9853" class="w-full text-xs bg-white border border-slate-300 rounded-lg p-2">
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button type="submit" id="admin-save-btn" class="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-xs rounded-xl shadow transition">
+            💾 儲存並寫入 Supabase
+          </button>
+          <button type="button" onclick="resetAdminForm()" class="px-4 py-2.5 bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">
+            重置
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
 
   <!-- 7. 一頁式行程卡片區塊 -->
   <main id="itinerary-container" class="max-w-4xl mx-auto px-4 space-y-6">
     <div id="loading-spinner" class="text-center py-12">
       <i class="fa-solid fa-circle-notch fa-spin text-3xl text-slate-400"></i>
-      <p class="text-sm text-slate-500 mt-3 font-medium">正在讀取最新的試算表行程資料...</p>
+      <p class="text-sm text-slate-500 mt-3 font-medium">正在讀取最新的 Supabase 行程資料...</p>
     </div>
   </main>
 
   <!-- 8. JavaScript 邏輯 -->
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycby3lp2T_FBEQWGLrenjUW5rbmw5WyAO477YXn1Y84PRB6eo2f8Elf-CRcpK4vnB3GHpNw/exec";
+    // ------------------- ⚙️ Supabase 設定 -------------------
+    const SUPABASE_URL = "https://giubriqbequoxwedfsux.supabase.co";
+    // ⚠️ 請將下方的字符串替換為您在 Supabase Project Settings -> API -> anon public 取得的 Key
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpdWJyaXFiZXF1b3h3ZWRmc3V4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5MDUxNDUsImV4cCI6MjEwNTQ4MTE0NX0.FwHcTeIlD4QfAOLNTQmo2bw8z-OM3QphpSPq3Er-3cc"; 
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let CURRENT_TRIP_ID = 'chiangmai_2026';
     const mapInstances = {};
     let thbToTwdRate = 0.92;
     let dailyWeatherData = {}; 
     const currencySymbols = { 'THB': '฿', 'TWD': 'NT$' };
 
-    let members = [];
-    let expenses = JSON.parse(localStorage.getItem('chiangmai_expenses') || '[]');
-    let defaultCurrency = 'THB';
-    let selectedPayerId = '';
-    let selectedSplitters = [];
-    let selectedCategory = '食物';
-
-    const fallbackMembers = [
+    const members = [
       { MemberId: 'M1', Name: '兄弟 A', Avatar: '👦', Status: 'Active' },
       { MemberId: 'M2', Name: '兄弟 B', Avatar: '👨', Status: 'Active' }
     ];
+
+    let expenses = [];
+    let defaultCurrency = 'THB';
+    let selectedPayerId = 'M1';
+    let selectedSplitters = ['M1', 'M2'];
+    let selectedCategory = '食物';
 
     function escapeJsString(str) {
       if (!str) return '';
@@ -424,7 +523,7 @@
       }
     }
 
-    // ------------------- 💰 拆帳與分帳邏輯 (付款人全膠囊 UI) -------------------
+    // ------------------- 💳 分帳與 Supabase 記帳 -------------------
 
     function selectCategory(cat) {
       selectedCategory = cat;
@@ -473,79 +572,53 @@
       });
     }
 
-    async function syncExpensesFromSheet() {
+    async function syncExpensesFromSupabase() {
       const syncStatusEl = document.getElementById('sync-status');
-      syncStatusEl.innerHTML = `<span class="text-amber-400"><i class="fa-solid fa-arrows-rotate fa-spin"></i> 同步資料中...</span>`;
+      syncStatusEl.innerHTML = `<span class="text-amber-400"><i class="fa-solid fa-arrows-rotate fa-spin"></i> Supabase 同步中...</span>`;
 
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const { data, error } = await supabase
+          .from('expenses')
+          .select('*')
+          .eq('trip_id', CURRENT_TRIP_ID)
+          .order('id', { ascending: true });
 
-        const res = await fetch(`${API_URL}?action=getExpensesData`, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        const data = await res.json();
+        if (error) throw error;
 
-        if (data.status === 'success' && data.members && data.members.length > 0) {
-          members = data.members;
-          if (data.expenses && data.expenses.length > 0) {
-            expenses = data.expenses;
-            saveExpensesToLocal();
-          }
-          defaultCurrency = data.currency || 'THB';
-          syncStatusEl.innerText = '點擊可展開或收折記帳面板';
-        } else {
-          throw new Error('回傳資料無效');
-        }
+        expenses = data || [];
+        syncStatusEl.innerText = '已與 Supabase 同步完畢';
       } catch (err) {
-        console.warn('GAS 讀取失敗，使用離線預設備用資料:', err);
-        if (members.length === 0) members = fallbackMembers;
-        syncStatusEl.innerText = '使用離線資料';
+        console.warn('Supabase 讀取記帳失敗:', err);
+        syncStatusEl.innerText = '離線檢視中';
       } finally {
-        const activeMembers = members.filter(m => m.Status !== 'Left');
-        if (activeMembers.length > 0 && !selectedPayerId) {
-          selectedPayerId = activeMembers[0].MemberId;
-        }
-        if (selectedSplitters.length === 0) {
-          selectedSplitters = activeMembers.map(m => m.MemberId);
-        }
         renderFormUI();
         renderExpenses();
       }
     }
 
-    // 動態渲染付款人膠囊與平分人膠囊
     function renderFormUI() {
       const payerCapsulesDiv = document.getElementById('expense-payer-capsules');
       const splittersDiv = document.getElementById('expense-splitters');
-      const activeMembers = members.filter(m => m.Status !== 'Left');
 
-      // 渲染付款人膠囊 (單選)
-      payerCapsulesDiv.innerHTML = activeMembers.map(m => {
-        const isSelected = (m.MemberId === selectedPayerId);
-        return `
-          <button type="button" onclick="selectPayer('${m.MemberId}')" class="px-3 py-1.5 text-xs rounded-full border font-bold transition-all ${
-            isSelected 
-              ? 'bg-slate-900 text-amber-400 border-slate-900 shadow-sm' 
-              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-          }">
-            ${m.Avatar} ${m.Name}
-          </button>
-        `;
-      }).join('');
+      payerCapsulesDiv.innerHTML = members.map(m => `
+        <button type="button" onclick="selectPayer('${m.MemberId}')" class="px-3 py-1.5 text-xs rounded-full border font-bold transition-all ${
+          m.MemberId === selectedPayerId 
+            ? 'bg-slate-900 text-amber-400 border-slate-900 shadow-sm' 
+            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+        }">
+          ${m.Avatar} ${m.Name}
+        </button>
+      `).join('');
 
-      // 渲染平分人膠囊 (複選)
-      splittersDiv.innerHTML = activeMembers.map(m => {
-        const isSelected = selectedSplitters.includes(m.MemberId);
-        return `
-          <button type="button" onclick="toggleSplitter('${m.MemberId}')" class="px-2.5 py-1 text-xs rounded-full border transition-all ${
-            isSelected 
-              ? 'bg-amber-500 text-white border-amber-500 font-bold shadow-2xs' 
-              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-          }">
-            ${m.Avatar} ${m.Name}
-          </button>
-        `;
-      }).join('');
+      splittersDiv.innerHTML = members.map(m => `
+        <button type="button" onclick="toggleSplitter('${m.MemberId}')" class="px-2.5 py-1 text-xs rounded-full border transition-all ${
+          selectedSplitters.includes(m.MemberId) 
+            ? 'bg-amber-500 text-white border-amber-500 font-bold shadow-2xs' 
+            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+        }">
+          ${m.Avatar} ${m.Name}
+        </button>
+      `).join('');
     }
 
     function toggleSplitter(id) {
@@ -558,10 +631,6 @@
       renderFormUI();
     }
 
-    function saveExpensesToLocal() {
-      localStorage.setItem('chiangmai_expenses', JSON.stringify(expenses));
-    }
-
     function renderExpenses() {
       const listEl = document.getElementById('expense-list');
       const summaryEl = document.getElementById('expense-summary');
@@ -571,7 +640,7 @@
 
       if (expenses.length === 0) {
         listEl.innerHTML = `<p class="text-xs text-slate-400 py-6 text-center border border-dashed border-slate-200 rounded-lg">尚無消費明細</p>`;
-        summaryEl.innerHTML = `<p class="text-xs text-slate-500 py-4 text-center">尚無記帳資料，輸入項目後將自動為您統計結算。</p>`;
+        summaryEl.innerHTML = `<p class="text-xs text-slate-500 py-4 text-center">尚無記帳資料，輸入項目後將自動統計結算。</p>`;
         return;
       }
 
@@ -580,48 +649,46 @@
       const currSymbol = currencySymbols[defaultCurrency] || defaultCurrency;
       const catIconMap = { '食物': '🍔', '交通': '🚕', '其他': '🛍️' };
 
-      // 歷史明細 Tab
       listEl.innerHTML = expenses.slice().reverse().map(exp => {
-        const payer = memberMap[exp.PayerId] || { Name: exp.PayerId, Avatar: '👤' };
-        const splitIds = (exp.SplitWith || '').split(',').filter(Boolean);
+        const payer = memberMap[exp.payer_id] || { Name: exp.payer_id, Avatar: '👤' };
+        const splitIds = (exp.split_with || '').split(',').filter(Boolean);
         const splitAvatars = splitIds.map(id => (memberMap[id] ? memberMap[id].Avatar : '')).join(' ');
 
-        const catIcon = catIconMap[exp.Category] || '📝';
-        const twdEst = defaultCurrency === 'THB' ? `≈ NT$ ${Math.round(exp.Amount * thbToTwdRate)}` : '';
+        const catIcon = catIconMap[exp.category] || '📝';
+        const twdEst = defaultCurrency === 'THB' ? `≈ NT$ ${Math.round(exp.amount * thbToTwdRate)}` : '';
 
         return `
           <div class="bg-slate-50 border border-slate-200/80 p-2.5 rounded-xl flex justify-between items-center text-xs">
             <div class="flex-1 pr-2">
               <div class="font-bold text-slate-800 flex items-center gap-1.5">
-                <span>${catIcon} ${exp.Note || exp.Category}</span>
-                <span class="text-[10px] bg-slate-200/70 text-slate-600 px-1.5 py-0.2 rounded font-normal">${exp.Category}</span>
+                <span>${catIcon} ${exp.note || exp.category}</span>
+                <span class="text-[10px] bg-slate-200/70 text-slate-600 px-1.5 py-0.2 rounded font-normal">${exp.category}</span>
               </div>
               <p class="text-[10px] text-slate-400 mt-0.5">
                 由 <strong class="text-slate-700">${payer.Avatar}${payer.Name}</strong> 付款 · 平分: ${splitAvatars || '所有人'}
               </p>
             </div>
             <div class="text-right">
-              <span class="font-extrabold text-slate-900 block">${currSymbol}${exp.Amount}</span>
+              <span class="font-extrabold text-slate-900 block">${currSymbol}${exp.amount}</span>
               ${twdEst ? `<span class="text-[10px] text-slate-400 block">${twdEst}</span>` : ''}
             </div>
           </div>
         `;
       }).join('');
 
-      // 計算各成員墊款與累積應付
       const paidMap = {};
       const owedMap = {};
       members.forEach(m => { paidMap[m.MemberId] = 0; owedMap[m.MemberId] = 0; });
 
       let totalSpent = 0;
       expenses.forEach(exp => {
-        const amt = parseFloat(exp.Amount) || 0;
+        const amt = parseFloat(exp.amount) || 0;
         totalSpent += amt;
 
-        if (paidMap[exp.PayerId] !== undefined) paidMap[exp.PayerId] += amt;
-        else paidMap[exp.PayerId] = amt;
+        if (paidMap[exp.payer_id] !== undefined) paidMap[exp.payer_id] += amt;
+        else paidMap[exp.payer_id] = amt;
 
-        const splitIds = (exp.SplitWith || '').split(',').filter(Boolean);
+        const splitIds = (exp.split_with || '').split(',').filter(Boolean);
         if (splitIds.length > 0) {
           const splitShare = amt / splitIds.length;
           splitIds.forEach(id => {
@@ -631,7 +698,6 @@
         }
       });
 
-      // 找補演算法
       const debtors = [];
       const creditors = [];
       Object.keys(paidMap).forEach(id => {
@@ -655,7 +721,6 @@
         if (creditor.amount < 0.1) j++;
       }
 
-      // 拆帳總覽 Tab
       let resultHtml = `
         <div class="mb-3 pb-2 border-b border-amber-200/60 flex justify-between items-center text-xs">
           <span>全團總消費: <strong class="text-slate-900 text-sm">${currSymbol}${Math.round(totalSpent)}</strong> ${defaultCurrency === 'THB' ? `<span class="text-[10px] text-slate-400">(≈NT$ ${Math.round(totalSpent * thbToTwdRate)})</span>` : ''}</span>
@@ -670,10 +735,9 @@
               const twdPersonal = defaultCurrency === 'THB' ? `≈ NT$ ${Math.round(personalSpent * thbToTwdRate)}` : '';
               return `
                 <div class="bg-amber-50/50 border border-amber-100 p-2 rounded-lg text-xs flex items-center justify-between">
-                  <span class="font-bold text-slate-700 truncate">${m.Avatar} ${m.Name}</span>
+                  <span class="font-bold text-slate-700 truncate">${m.Avatar}${m.Name}</span>
                   <div class="text-right flex-shrink-0">
-                    <span class="font-extrabold text-amber-700 block">${currSymbol}${personalSpent}</span>
-                    ${twdPersonal ? `<span class="text-[9px] text-slate-400 block">${twdPersonal}</span>` : ''}
+                    <span class="font-extrabold text-amber-700 block">${currSymbol}${personalSpent}</span>${twdPersonal ? `<span class="text-[9px] text-slate-400 block">${twdPersonal}</span>` : ''}
                   </div>
                 </div>
               `;
@@ -724,35 +788,110 @@
       }
 
       const newExpense = {
-        ExpenseId: 'E' + Date.now().toString().slice(-6),
-        Timestamp: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Bangkok' }),
-        PayerId: selectedPayerId,
-        Amount: amount,
-        Category: selectedCategory,
-        Note: noteInput.value.trim() || selectedCategory,
-        SplitWith: selectedSplitters.join(',')
+        expense_id: 'E' + Date.now().toString().slice(-6),
+        trip_id: CURRENT_TRIP_ID,
+        timestamp: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Bangkok' }),
+        payer_id: selectedPayerId,
+        amount: amount,
+        category: selectedCategory,
+        note: noteInput.value.trim() || selectedCategory,
+        split_with: selectedSplitters.join(',')
       };
 
-      expenses.push(newExpense);
-      saveExpensesToLocal();
-      renderExpenses();
+      const { error } = await supabase.from('expenses').insert([newExpense]);
 
-      amountInput.value = '';
-      noteInput.value = '';
-
-      switchTab('list');
-
-      try {
-        await fetch(API_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'addExpense', data: newExpense })
-        });
-      } catch (err) {
-        console.error('寫入 Google Sheet 失敗:', err);
+      if (error) {
+        alert('寫入 Supabase 失敗: ' + error.message);
+      } else {
+        expenses.push(newExpense);
+        renderExpenses();
+        amountInput.value = '';
+        noteInput.value = '';
+        switchTab('list');
       }
     }
+
+    // ------------------- ⚙️ 前台 Admin 編輯模式邏輯 -------------------
+
+    function toggleAdminPanel() {
+      const panel = document.getElementById('admin-panel');
+      panel.classList.toggle('hidden');
+      if (!panel.classList.contains('hidden')) {
+        panel.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function resetAdminForm() {
+      document.getElementById('edit-item-id').value = '';
+      document.getElementById('admin-form').reset();
+      document.getElementById('admin-save-btn').innerText = '💾 儲存並寫入 Supabase';
+    }
+
+    async function editItineraryItem(itemJsonBase64) {
+      const item = JSON.parse(atob(itemJsonBase64));
+      document.getElementById('edit-item-id').value = item.id;
+      document.getElementById('admin-day-id').value = item.day_id;
+      document.getElementById('admin-time').value = item.time;
+      document.getElementById('admin-title').value = item.title;
+      document.getElementById('admin-category').value = item.category || '景點';
+      document.getElementById('admin-thai-name').value = item.thai_name || '';
+      document.getElementById('admin-address').value = item.address || '';
+      document.getElementById('admin-image-url').value = item.image_url || '';
+      document.getElementById('admin-notes').value = item.notes || '';
+      document.getElementById('admin-lat').value = item.lat || '';
+      document.getElementById('admin-lng').value = item.lng || '';
+
+      document.getElementById('admin-save-btn').innerText = '✏️ 更新行程項目';
+      document.getElementById('admin-panel').classList.remove('hidden');
+      document.getElementById('admin-panel').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function handleSaveItinerary(e) {
+      e.preventDefault();
+      const editId = document.getElementById('edit-item-id').value;
+
+      const payload = {
+        trip_id: CURRENT_TRIP_ID,
+        day_id: document.getElementById('admin-day-id').value,
+        time: document.getElementById('admin-time').value,
+        title: document.getElementById('admin-title').value,
+        category: document.getElementById('admin-category').value,
+        thai_name: document.getElementById('admin-thai-name').value,
+        address: document.getElementById('admin-address').value,
+        image_url: document.getElementById('admin-image-url').value,
+        notes: document.getElementById('admin-notes').value,
+        lat: document.getElementById('admin-lat').value ? parseFloat(document.getElementById('admin-lat').value) : null,
+        lng: document.getElementById('admin-lng').value ? parseFloat(document.getElementById('admin-lng').value) : null
+      };
+
+      let res;
+      if (editId) {
+        res = await supabase.from('itineraries').update(payload).eq('id', editId);
+      } else {
+        res = await supabase.from('itineraries').insert([payload]);
+      }
+
+      if (res.error) {
+        alert('儲存至 Supabase 失敗: ' + res.error.message);
+      } else {
+        alert('行程已順利儲存成功！');
+        resetAdminForm();
+        fetchAndRenderItinerary();
+      }
+    }
+
+    async function deleteItineraryItem(id) {
+      if (!confirm('確定要刪除這個行程嗎？此動作無法復原。')) return;
+
+      const { error } = await supabase.from('itineraries').delete().eq('id', id);
+      if (error) {
+        alert('刪除失敗: ' + error.message);
+      } else {
+        fetchAndRenderItinerary();
+      }
+    }
+
+    // ------------------- 🗺️ 行程渲染與 Leaflet 地圖 -------------------
 
     function copyToClipboard(text, btnElement) {
       navigator.clipboard.writeText(text).then(() => {
@@ -821,15 +960,15 @@
     };
 
     const defaultDays = [
-      { dayId: "day-1", dayLabel: "D1", date: "10/09", isoDate: "2026-10-09", fullDate: "10/09 (五)", title: "行程規劃中" },
-      { dayId: "day-2", dayLabel: "D2", date: "10/10", isoDate: "2026-10-10", fullDate: "10/10 (六)", title: "行程規劃中" },
-      { dayId: "day-3", dayLabel: "D3", date: "10/11", isoDate: "2026-10-11", fullDate: "10/11 (日)", title: "行程規劃中" },
-      { dayId: "day-4", dayLabel: "D4", date: "10/12", isoDate: "2026-10-12", fullDate: "10/12 (一)", title: "行程規劃中" },
-      { dayId: "day-5", dayLabel: "D5", date: "10/13", isoDate: "2026-10-13", fullDate: "10/13 (二)", title: "行程規劃中" },
-      { dayId: "day-6", dayLabel: "D6", date: "10/14", isoDate: "2026-10-14", fullDate: "10/14 (三)", title: "行程規劃中" },
-      { dayId: "day-7", dayLabel: "D7", date: "10/15", isoDate: "2026-10-15", fullDate: "10/15 (四)", title: "行程規劃中" },
-      { dayId: "day-8", dayLabel: "D8", date: "10/16", isoDate: "2026-10-16", fullDate: "10/16 (五)", title: "行程規劃中" },
-      { dayId: "day-9", dayLabel: "D9", date: "10/17", isoDate: "2026-10-17", fullDate: "10/17 (六)", title: "行程規劃中" }
+      { dayId: "day-1", dayLabel: "D1", date: "10/09", isoDate: "2026-10-09", fullDate: "10/09 (五)", title: "抵達清邁 · 寧曼路漫步" },
+      { dayId: "day-2", dayLabel: "D2", date: "10/10", isoDate: "2026-10-10", fullDate: "10/10 (六)", title: "古城區巡禮與夜市" },
+      { dayId: "day-3", dayLabel: "D3", date: "10/11", isoDate: "2026-10-11", fullDate: "10/11 (日)", title: "素帖山雙龍寺與景觀咖啡" },
+      { dayId: "day-4", dayLabel: "D4", date: "10/12", isoDate: "2026-10-12", fullDate: "10/12 (一)", title: "行程自由規劃" },
+      { dayId: "day-5", dayLabel: "D5", date: "10/13", isoDate: "2026-10-13", fullDate: "10/13 (二)", title: "行程自由規劃" },
+      { dayId: "day-6", dayLabel: "D6", date: "10/14", isoDate: "2026-10-14", fullDate: "10/14 (三)", title: "行程自由規劃" },
+      { dayId: "day-7", dayLabel: "D7", date: "10/15", isoDate: "2026-10-15", fullDate: "10/15 (四)", title: "行程自由規劃" },
+      { dayId: "day-8", dayLabel: "D8", date: "10/16", isoDate: "2026-10-16", fullDate: "10/16 (五)", title: "行程自由規劃" },
+      { dayId: "day-9", dayLabel: "D9", date: "10/17", isoDate: "2026-10-17", fullDate: "10/17 (六)", title: "買伴手禮 · 滿載而歸" }
     ];
 
     function toggleDayAccordion(dayId, forceOpen = false) {
@@ -869,34 +1008,35 @@
       const navContainer = document.getElementById("day-nav-container");
 
       try {
-        const response = await fetch(API_URL);
-        const rawData = await response.json();
+        const { data: rawData, error } = await supabase
+          .from('itineraries')
+          .select('*')
+          .eq('trip_id', CURRENT_TRIP_ID)
+          .order('id', { ascending: true });
+
+        if (error) throw error;
 
         const daysMap = {};
         defaultDays.forEach(d => { daysMap[d.dayId] = { ...d, events: [] }; });
 
         if (Array.isArray(rawData)) {
-          rawData.forEach((row, idx) => {
-            const dayKey = (row.DayId || row.dayId || "").toString().toLowerCase().trim();
+          rawData.forEach((row) => {
+            const dayKey = (row.day_id || "").toLowerCase().trim();
             if (daysMap[dayKey]) {
-              if (row.DayTitle) daysMap[dayKey].title = row.DayTitle;
-              
-              const eventObj = {
-                id: `evt-${idx}`,
-                time: row.Time || "",
-                category: row.Category || "景點",
-                title: row.Title || "未命名行程",
-                subtitle: row.Subtitle || "",
-                address: row.Address || row.Title,
-                thaiName: row.ThaiName || "",
-                image: row.Image || "https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=600&q=80",
-                notes: row.Notes ? row.Notes.toString().split(';') : [],
-                mapUrl: row.MapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(row.Address || row.Title || "Chiang Mai")}`,
-                lat: row.Lat ? parseFloat(row.Lat) : null,
-                lng: row.Lng ? parseFloat(row.Lng) : null
-              };
-
-              daysMap[dayKey].events.push(eventObj);
+              daysMap[dayKey].events.push({
+                id: row.id,
+                time: row.time || "",
+                category: row.category || "景點",
+                title: row.title || "未命名行程",
+                address: row.address || row.title,
+                thaiName: row.thai_name || "",
+                image: row.image_url || "https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=600&q=80",
+                notes: row.notes ? row.notes.split(';') : [],
+                mapUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(row.address || row.title || "Chiang Mai")}`,
+                lat: row.lat ? parseFloat(row.lat) : null,
+                lng: row.lng ? parseFloat(row.lng) : null,
+                rawData: row
+              });
             }
           });
         }
@@ -935,16 +1075,17 @@
 
           let eventsHtml = "";
           if (day.events.length === 0) {
-            eventsHtml = `<div class="bg-white p-6 rounded-xl border border-dashed border-slate-300 text-center text-slate-400 text-sm">此天尚未新增行程，開啟 Google Sheet 即可隨時填寫！</div>`;
+            eventsHtml = `<div class="bg-white p-6 rounded-xl border border-dashed border-slate-300 text-center text-slate-400 text-sm">此天尚未新增行程，點擊右上方「⚙️ 管理行程」即可隨時新增！</div>`;
           } else {
             eventsHtml = day.events.map(event => {
               const hasCoords = event.lat && event.lng;
               const safeTitle = escapeJsString(event.title);
               const safeAddress = escapeJsString(event.address);
               const safeThai = escapeJsString(event.thaiName || event.title);
+              const jsonBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(event.rawData))));
 
               return `
-                <article class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 mb-4 transition hover:shadow-lg">
+                <article class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 mb-4 transition hover:shadow-lg relative">
                   <div class="flex flex-col md:flex-row">
                     <div class="md:w-1/3 h-48 md:h-auto relative bg-slate-200 flex-shrink-0">
                       <img src="${event.image}" alt="${safeTitle}" class="w-full h-full object-cover">
@@ -955,9 +1096,16 @@
 
                     <div class="p-5 md:w-2/3 flex flex-col justify-between flex-grow">
                       <div>
-                        <p class="text-xs font-bold text-slate-400 mb-1">${event.time}</p>
+                        <div class="flex justify-between items-start">
+                          <p class="text-xs font-bold text-slate-400 mb-1">${event.time}</p>
+                          <!-- ⚙️ Admin 快速編輯與刪除按鈕 -->
+                          <div class="flex gap-1">
+                            <button onclick="editItineraryItem('${jsonBase64}')" class="text-[11px] bg-slate-100 hover:bg-amber-100 text-slate-600 hover:text-amber-800 px-2 py-0.5 rounded transition">✏️ 編輯</button>
+                            <button onclick="deleteItineraryItem(${event.id})" class="text-[11px] bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 px-2 py-0.5 rounded transition">🗑️</button>
+                          </div>
+                        </div>
+
                         <h3 class="text-lg font-bold text-slate-800">${event.title}</h3>
-                        <p class="text-xs text-slate-500 mb-2">${event.subtitle}</p>
 
                         ${event.thaiName ? `
                           <div class="bg-amber-50/70 border border-amber-200/60 rounded-lg p-2.5 my-2 flex justify-between items-center">
@@ -986,7 +1134,7 @@
                           <i class="fa-solid fa-location-dot text-red-500"></i> Google Maps
                         </a>
                         ${hasCoords ? `
-                          <button id="map-btn-${event.id}" onclick="toggleMap('${event.id}', ${event.lat}, ${event.lng}, '${safeTitle}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1">
+                          <button id="map-btn-${event.id}" onclick="toggleMap('${event.id}',${event.lat}, ${event.lng}, '${safeTitle}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1">
                             <i class="fa-solid fa-map text-amber-500"></i> 周邊 1km 地圖
                           </button>
                         ` : ''}
@@ -1028,8 +1176,8 @@
         });
 
       } catch (error) {
-        console.error("載入失敗:", error);
-        container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl text-center text-sm">無法載入資料，請確認 API 存取權限。</div>`;
+        console.error("Supabase 行程讀取失敗:", error);
+        container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl text-center text-sm">無法載入 Supabase 行程資料，請確認 API Key 與 Table 設定。</div>`;
       }
     }
 
@@ -1037,7 +1185,7 @@
     updateCountdown();
     fetchLiveExchangeRate();
     fetchChiangMaiWeather();
-    syncExpensesFromSheet();
+    syncExpensesFromSupabase();
   </script>
 </body>
 </html>
