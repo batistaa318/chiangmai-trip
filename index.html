@@ -379,9 +379,12 @@
   <script>
     // ------------------- ⚙️ Supabase 設定 -------------------
     const SUPABASE_URL = "https://giubriqbequoxwedfsux.supabase.co";
-    // ⚠️ 請將下方的字符串替換為您在 Supabase Project Settings -> API -> anon public 取得的 Key
+    
+    // ⬇️【請在此處手動更新你的 KEY】⬇️
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpdWJyaXFiZXF1b3h3ZWRmc3V4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5MDUxNDUsImV4cCI6MjEwNTQ4MTE0NX0.FwHcTeIlD4QfAOLNTQmo2bw8z-OM3QphpSPq3Er-3cc"; 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // 初始化 SDK 客戶端 (使用 supabaseClient 避免全域變數命名衝突)
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let CURRENT_TRIP_ID = 'chiangmai_2026';
     const mapInstances = {};
@@ -389,9 +392,10 @@
     let dailyWeatherData = {}; 
     const currencySymbols = { 'THB': '฿', 'TWD': 'NT$' };
 
+    // 成員名單資料
     const members = [
-      { MemberId: 'M1', Name: 'Aking', Avatar: '❤️', Status: 'Active' },
-      { MemberId: 'M2', Name: 'Jim', Avatar: '💛', Status: 'Active' }
+      { MemberId: 'M1', Name: '兄弟 A', Avatar: '👦', Status: 'Active' },
+      { MemberId: 'M2', Name: '兄弟 B', Avatar: '👨', Status: 'Active' }
     ];
 
     let expenses = [];
@@ -484,8 +488,6 @@
           }
         }
 
-        fetchAndRenderItinerary();
-
       } catch (err) {
         console.error("天氣載入失敗:", err);
         weatherContainer.innerHTML = `<div class="text-xs text-slate-500 py-1">無法載入 5 小時預報</div>`;
@@ -577,7 +579,7 @@
       syncStatusEl.innerHTML = `<span class="text-amber-400"><i class="fa-solid fa-arrows-rotate fa-spin"></i> Supabase 同步中...</span>`;
 
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
           .from('expenses')
           .select('*')
           .eq('trip_id', CURRENT_TRIP_ID)
@@ -798,7 +800,7 @@
         split_with: selectedSplitters.join(',')
       };
 
-      const { error } = await supabase.from('expenses').insert([newExpense]);
+      const { error } = await supabaseClient.from('expenses').insert([newExpense]);
 
       if (error) {
         alert('寫入 Supabase 失敗: ' + error.message);
@@ -866,9 +868,9 @@
 
       let res;
       if (editId) {
-        res = await supabase.from('itineraries').update(payload).eq('id', editId);
+        res = await supabaseClient.from('itineraries').update(payload).eq('id', editId);
       } else {
-        res = await supabase.from('itineraries').insert([payload]);
+        res = await supabaseClient.from('itineraries').insert([payload]);
       }
 
       if (res.error) {
@@ -883,7 +885,7 @@
     async function deleteItineraryItem(id) {
       if (!confirm('確定要刪除這個行程嗎？此動作無法復原。')) return;
 
-      const { error } = await supabase.from('itineraries').delete().eq('id', id);
+      const { error } = await supabaseClient.from('itineraries').delete().eq('id', id);
       if (error) {
         alert('刪除失敗: ' + error.message);
       } else {
@@ -1008,7 +1010,7 @@
       const navContainer = document.getElementById("day-nav-container");
 
       try {
-        const { data: rawData, error } = await supabase
+        const { data: rawData, error } = await supabaseClient
           .from('itineraries')
           .select('*')
           .eq('trip_id', CURRENT_TRIP_ID)
@@ -1177,15 +1179,19 @@
 
       } catch (error) {
         console.error("Supabase 行程讀取失敗:", error);
-        container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl text-center text-sm">無法載入 Supabase 行程資料，請確認 API Key 與 Table 設定。</div>`;
+        container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl text-center text-sm font-bold">無法載入 Supabase 行程資料，請確認第 262 行的 API Key 是否已填入正確。</div>`;
       }
     }
 
-    // 初始化呼叫
-    updateCountdown();
-    fetchLiveExchangeRate();
-    fetchChiangMaiWeather();
-    syncExpensesFromSupabase();
+    // 🚀 安全初始化（確保優先渲染 UI 膠囊）
+    document.addEventListener("DOMContentLoaded", () => {
+      updateCountdown();
+      renderFormUI(); // 立即繪製分帳人名的膠囊按鈕
+      fetchLiveExchangeRate();
+      fetchChiangMaiWeather();
+      syncExpensesFromSupabase();
+      fetchAndRenderItinerary();
+    });
   </script>
 </body>
 </html>
