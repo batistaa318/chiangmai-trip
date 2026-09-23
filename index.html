@@ -1,440 +1,1043 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" class="scroll-smooth">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>清邁自由行 2026</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026清邁兄弟之旅</title>
+
+  <!-- PWA 設定 -->
+  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIjIwMjYg4LmA4LiK4Li14Lii4LmJ4LiZ4Lij4LmI4LmA4LiB4LiiIiwKICAic2hvcnRfbmFtZSI6ICIyMDI24LmA4LiK4Li14LiiIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwZjE3MmEiLAogICJ0aGVtZV9jb2xvciI6ICIjMGYxNzJhIgp9">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome 圖示庫 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Leaflet.js 免費互動地圖套件 -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
 </head>
-<body class="bg-gray-100 text-gray-800 min-h-screen pb-12">
+<body class="bg-slate-50 text-slate-800 antialiased pb-20">
 
-    <!-- Header / Banner -->
-    <header class="bg-emerald-700 text-white shadow-lg">
-        <div class="max-w-4xl mx-auto px-4 py-6">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <span id="trip-badge" class="bg-emerald-800 text-emerald-200 text-xs px-2.5 py-1 rounded-full font-semibold uppercase tracking-wide">載入中...</span>
-                    <h1 id="trip-title" class="text-2xl sm:text-3xl font-bold mt-1">清邁自由行</h1>
-                    <p id="trip-subtitle" class="text-emerald-100 text-sm mt-0.5">---</p>
-                </div>
-                <!-- 倒數計時器 -->
-                <div class="bg-emerald-800/80 backdrop-blur rounded-xl p-3 border border-emerald-600 text-center min-w-[140px]">
-                    <div class="text-xs text-emerald-200">旅程倒數</div>
-                    <div id="countdown-timer" class="text-xl font-extrabold text-amber-300">-- 天</div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <main class="max-w-4xl mx-auto px-4 mt-6 space-y-6">
-
-        <!-- 航班與預算概覽卡片 -->
-        <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- 航班資訊 -->
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                <h2 class="text-lg font-bold text-gray-700 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-plane-departure text-emerald-600"></i> 航班資訊
-                </h2>
-                <div class="space-y-3 text-sm">
-                    <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-xl">
-                        <div>
-                            <span class="font-bold text-emerald-700 block" id="outbound-code">--</span>
-                            <span class="text-gray-500 text-xs" id="outbound-route">--</span>
-                        </div>
-                        <div class="text-right text-xs text-gray-600 font-medium" id="outbound-time">--</div>
-                    </div>
-                    <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-xl">
-                        <div>
-                            <span class="font-bold text-emerald-700 block" id="inbound-code">--</span>
-                            <span class="text-gray-500 text-xs" id="inbound-route">--</span>
-                        </div>
-                        <div class="text-right text-xs text-gray-600 font-medium" id="inbound-time">--</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 匯率與快快試算 -->
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between">
-                <div>
-                    <h2 class="text-lg font-bold text-gray-700 mb-2 flex items-center justify-between">
-                        <span><i class="fa-solid fa-coins text-amber-500"></i> 泰銖/台幣 匯率換算</span>
-                        <span id="rate-source" class="text-xs font-normal text-gray-400">---</span>
-                    </h2>
-                    <p class="text-xs text-gray-500 mb-3">當前參考匯率: <span id="current-rate-display" class="font-bold text-gray-700">--</span></p>
-                </div>
-                <div class="space-y-2">
-                    <div class="flex gap-2">
-                        <input type="number" id="thb-input" placeholder="輸入泰銖 (THB)" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                        <button onclick="convertCurrency()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition">換算</button>
-                    </div>
-                    <div id="calc-result" class="text-center py-2 bg-emerald-50 text-emerald-800 rounded-xl font-bold text-sm hidden">
-                        約合台幣 TWD <span id="twd-output" class="text-lg text-emerald-700">0</span> 元
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 每日住宿清單 -->
-        <section class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold text-gray-700 flex items-center gap-2">
-                    <i class="fa-solid fa-hotel text-emerald-600"></i> 住宿行程規劃
-                </h2>
-                <span class="text-xs text-gray-400">點擊飯店卡片可編輯或在地圖開啟</span>
-            </div>
-
-            <div id="accommodations-list" class="space-y-4">
-                <div class="text-center py-8 text-gray-400">資料載入中...</div>
-            </div>
-        </section>
-    </main>
-
-    <!-- 編輯住宿 Modal 彈窗 -->
-    <div id="edit-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
-            <div class="flex justify-between items-center border-b pb-3">
-                <h3 class="font-bold text-gray-800 text-lg">編輯住宿資訊</h3>
-                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
-            </div>
-
-            <form id="edit-form" onsubmit="saveAccommodation(event)" class="space-y-3">
-                <input type="hidden" id="modal-date">
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1">入住日期</label>
-                    <input type="text" id="modal-date-display" readonly class="w-full bg-gray-100 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-600">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1">飯店名稱 *</label>
-                    <input type="text" id="modal-hotel-name" required class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1">中 / 英文地址</label>
-                    <input type="text" id="modal-address" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1">泰文地址 (給司機大字展示)</label>
-                    <input type="text" id="modal-address-th" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1">Google 地圖網址 (自動解析經緯度)</label>
-                    <input type="url" id="modal-maps-url" placeholder="https://www.google.com/maps/place/..." oninput="previewGeoParse()" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                </div>
-
-                <!-- 經緯度解析預覽 -->
-                <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs text-gray-600 space-y-1">
-                    <div class="font-semibold text-gray-700">自動解析座標狀態：</div>
-                    <div class="flex justify-between">
-                        <span>緯度 (latitude): <strong id="parse-lat" class="text-emerald-700">--</strong></span>
-                        <span>經度 (longitude): <strong id="parse-lng" class="text-emerald-700">--</strong></span>
-                    </div>
-                </div>
-
-                <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="closeEditModal()" class="w-1/2 bg-gray-100 text-gray-700 py-2.5 rounded-xl font-medium text-sm hover:bg-gray-200 transition">取消</button>
-                    <button type="submit" id="save-btn" class="w-1/2 bg-emerald-600 text-white py-2.5 rounded-xl font-medium text-sm hover:bg-emerald-700 transition">儲存並同步</button>
-                </div>
-            </form>
-        </div>
+  <!-- 1. 頂部導覽列 -->
+  <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+      <span class="font-bold text-lg tracking-wide">Chiang Mai 2026</span>
+      <div class="flex space-x-2">
+        <a href="#expense-section" class="text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-1.5 rounded-full transition flex items-center gap-1 shadow-sm">
+          <i class="fa-solid fa-receipt"></i> 分帳小工具
+        </a>
+        <a href="https://maps.app.goo.gl/e5BXS9CFF6uJgYa98" target="_blank" class="text-xs bg-rose-500 hover:bg-rose-600 text-white font-bold px-3 py-1.5 rounded-full transition flex items-center gap-1 shadow-sm">
+          <i class="fa-solid fa-heart"></i> 口袋名單地圖
+        </a>
+        <button onclick="window.print()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-full border border-slate-700 transition">
+          <i class="fa-solid fa-download mr-1"></i> 列印/PDF
+        </button>
+      </div>
     </div>
+  </header>
 
-    <script>
-        // ==========================================
-        // 1. Supabase 初始化設定 (請填入您的憑證)
-        // ==========================================
-        const SUPABASE_URL = 'https://giubriqbequoxwedfsux.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpdWJyaXFiZXF1b3h3ZWRmc3V4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5MDUxNDUsImV4cCI6MjEwNTQ4MTE0NX0.FwHcTeIlD4QfAOLNTQmo2bw8z-OM3QphpSPq3Er-3cc';
+  <!-- 2. 主標題視覺區 -->
+  <section class="relative bg-cover bg-center text-white py-14 px-4 text-center" 
+           style="background-image: url('https://lixiaoyu.tw/wp-content/uploads/20190725165714_69.jpg');">
+    <div class="absolute inset-0 bg-slate-900/70"></div>
+
+    <div class="relative z-10 max-w-3xl mx-auto">
+      <div class="inline-block bg-amber-500/90 backdrop-blur-md text-slate-950 font-extrabold text-xs px-3 py-1 rounded-full mb-3 shadow-lg">
+        <i class="fa-regular fa-clock mr-1"></i> <span id="countdown-text">計算倒數中...</span>
+      </div>
+
+      <p class="text-amber-400 font-semibold tracking-widest text-sm uppercase mb-2">BROTHERS TRIP · 2大人 · 9天8夜</p>
+      <h1 class="text-3xl sm:text-4xl font-extrabold mb-3">2026清邁兄弟之旅</h1>
+      <p class="text-slate-300 text-sm sm:text-base">2026 / 10 / 09 — 10 / 17 · 泰國清邁</p>
+      
+      <div class="flex flex-wrap justify-center gap-2 mt-6 text-xs text-slate-300">
+        <span class="bg-slate-800/80 backdrop-blur px-3 py-1 rounded-full border border-slate-700">市區 Grab / 雙條車</span>
+        <span class="bg-slate-800/80 backdrop-blur px-3 py-1 rounded-full border border-slate-700">每人托運 23kg</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. 天氣預報與匯率換算工具 -->
+  <section class="max-w-4xl mx-auto px-4 -mt-6 relative z-20 mb-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      
+      <!-- 清邁 5 小時內即時天氣預報 -->
+      <div class="bg-slate-900 text-white p-4 rounded-xl shadow-lg border border-slate-800">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-amber-400 flex items-center gap-1">
+            <i class="fa-solid fa-cloud-sun-rain"></i> 清邁未來 5 小時天氣預報
+          </span>
+          <span id="current-temp" class="text-xs text-slate-300 font-medium">載入中...</span>
+        </div>
+
+        <div id="weather-hourly" class="flex space-x-2 overflow-x-auto no-scrollbar pt-1 pb-1">
+          <div class="text-xs text-slate-400 py-2">正在讀取小時天氣...</div>
+        </div>
+      </div>
+
+      <!-- 泰銖 ⇄ 台幣 雙向即時計算機 -->
+      <div class="bg-white p-4 rounded-xl shadow-lg border border-slate-100 flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-emerald-600 flex items-center gap-1">
+            <i class="fa-solid fa-calculator"></i> 雙向即時匯率換算
+          </span>
+          <span id="exchange-rate-info" class="text-[10px] text-slate-400">更新即時匯率中...</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1">
+            <input type="number" id="thb-input" placeholder="泰銖 THB" oninput="convertCurrency('THB')"
+                   class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <span class="absolute right-2 top-2 text-xs font-bold text-slate-400">฿</span>
+          </div>
+          <span class="text-xs font-bold text-slate-400">⇄</span>
+          <div class="relative flex-1">
+            <input type="number" id="twd-input" placeholder="台幣 TWD" oninput="convertCurrency('TWD')"
+                   class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <span class="absolute right-2 top-2 text-xs font-bold text-emerald-500">NT$</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 4. 航班與住宿摘要卡片 -->
+  <section class="max-w-4xl mx-auto px-4 relative z-20">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- 去程航班 -->
+      <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-100">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">去程 OUTBOUND</span>
+        </div>
+        <h3 class="text-xl font-bold text-slate-800">CI851</h3>
+        <p class="text-sm text-slate-600 mt-1">10/09 07:30 → 10:20</p>
+        <p class="text-xs text-slate-400 mb-4">TPE T1 → CNX</p>
+        <a href="https://www.china-airlines.com/" target="_blank" class="block text-center text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 rounded-lg font-medium transition">
+          航班動態
+        </a>
+      </div>
+
+      <!-- 回程航班 -->
+      <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-100">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-sky-600 bg-sky-50 px-2.5 py-0.5 rounded-full">回程 RETURN</span>
+        </div>
+        <h3 class="text-xl font-bold text-slate-800">CI852</h3>
+        <p class="text-sm text-slate-600 mt-1">10/17 11:20 → 16:00</p>
+        <p class="text-xs text-slate-400 mb-4">CNX → TPE T1</p>
+        <a href="https://www.china-airlines.com/" target="_blank" class="block text-center text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 rounded-lg font-medium transition">
+          線上報到
+        </a>
+      </div>
+
+      <!-- 住宿資訊 (含泰文卡片與發音) -->
+      <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-100 flex flex-col justify-between">
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full">住宿 STAY</span>
+          </div>
+          <h3 class="text-base font-bold text-slate-800 truncate">Art Mai Gallery Hotel</h3>
+          <p class="text-xs text-slate-500 mt-0.5 mb-2">清邁阿特邁畫廊飯店 (寧曼路)</p>
+          
+          <div class="bg-amber-50/70 border border-amber-200/60 rounded-lg p-2.5 my-2 flex justify-between items-center">
+            <div class="pr-2">
+              <span class="text-[10px] text-amber-700 font-bold block">給司機看泰文：</span>
+              <p class="text-base font-black text-slate-900 leading-tight">โรงแรมอาร์ต ไหม แกลเลอรี</p>
+            </div>
+            <button onclick="speakThai('โรงแรมอาร์ต ไหม แกลเลอรี', this)" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white p-2 rounded-full flex-shrink-0 transition shadow-sm" title="朗讀泰文">
+              <i class="fa-solid fa-volume-high text-xs"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex gap-2 mt-2">
+          <button onclick="copyToClipboard('Art Mai Gallery Hotel Chiang Mai', this)" class="flex-1 text-center text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 rounded-lg font-medium transition">
+            <i class="fa-regular fa-copy mr-1"></i> 複製地址
+          </button>
+          <a href="https://www.google.com/maps/search/?api=1&query=Art+Mai+Gallery+Chiang+Mai+Hotel" target="_blank" class="flex-1 text-center text-xs bg-amber-500 hover:bg-amber-600 text-white py-1.5 rounded-lg font-medium transition">
+            地圖
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 旅費分帳 / 記帳小工具 (全膠囊按鈕快捷版) -->
+  <section id="expense-section" class="max-w-4xl mx-auto px-4 my-8 scroll-mt-20">
+    <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden transition-all duration-300">
+      
+      <!-- 1. 可點擊收折的標題列 -->
+      <button id="expense-toggle-btn" onclick="toggleExpenseSection()" class="w-full px-5 py-4 bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-between border-b border-slate-800 transition-colors text-left outline-none">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-sm">
+            <i class="fa-solid fa-calculator"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-white text-sm sm:text-base leading-tight">旅費分帳 / 記帳小工具</h3>
+            <p class="text-[11px] text-slate-400 mt-0.5" id="sync-status">點擊可展開或收折記帳面板</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="expense-count" class="text-[10px] bg-amber-500 text-slate-950 font-extrabold px-2 py-0.5 rounded-full">0 筆</span>
+          <i id="expense-chevron" class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-300"></i>
+        </div>
+      </button>
+
+      <!-- 2. 主體內容區域 -->
+      <div id="expense-content" class="p-4 sm:p-5">
         
-        const CURRENT_TRIP_ID = 'chiangmai_2026';
-        let supabaseClient = null;
-        let currentRate = 0.92; // 預設備用匯率
+        <!-- Tab 切換選單 -->
+        <div class="flex border-b border-slate-200 mb-4 gap-4 text-xs font-bold">
+          <button onclick="switchTab('add')" id="tab-btn-add" class="pb-2 border-b-2 border-amber-500 text-amber-600 transition-colors flex items-center gap-1.5 outline-none">
+            <i class="fa-solid fa-plus-circle"></i> 新增消費
+          </button>
+          <button onclick="switchTab('summary')" id="tab-btn-summary" class="pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1.5 outline-none">
+            <i class="fa-solid fa-chart-pie"></i> 拆帳總覽
+          </button>
+          <button onclick="switchTab('list')" id="tab-btn-list" class="pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1.5 outline-none">
+            <i class="fa-solid fa-list-ul"></i> 明細紀錄
+          </button>
+        </div>
 
-        if (SUPABASE_URL !== 'https://YOUR_SUPABASE_PROJECT_ID.supabase.co') {
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        <!-- Panel 1: 新增記帳表單 -->
+        <div id="panel-add" class="space-y-3">
+          
+          <!-- 付款人直覺膠囊選擇器 -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">誰先付的？ (單選膠囊)</label>
+            <div id="expense-payer-capsules" class="flex flex-wrap gap-1.5"></div>
+          </div>
+
+          <!-- 金額輸入框 -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">金額 (THB 泰銖)</label>
+            <input type="number" id="expense-amount" placeholder="0" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold text-slate-900 focus:ring-1 focus:ring-amber-500 outline-none">
+          </div>
+
+          <!-- 三分類一鍵切換膠囊按鈕 -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">消費分類</label>
+            <div id="category-selector" class="grid grid-cols-3 gap-1.5">
+              <button type="button" onclick="selectCategory('食物')" id="cat-btn-食物" class="py-2 text-xs font-bold rounded-lg border text-center transition-all bg-amber-500 text-white border-amber-500 shadow-2xs">
+                🍔 食物
+              </button>
+              <button type="button" onclick="selectCategory('交通')" id="cat-btn-交通" class="py-2 text-xs font-bold rounded-lg border text-center transition-all bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100">
+                🚕 交通
+              </button>
+              <button type="button" onclick="selectCategory('其他')" id="cat-btn-其他" class="py-2 text-xs font-bold rounded-lg border text-center transition-all bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100">
+                🛍️ 其他
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">備註/品名 (選填)</label>
+            <input type="text" id="expense-note" placeholder="例：海南雞飯、Grab 車資" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 focus:ring-1 focus:ring-amber-500 outline-none">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">平分參與人 (複選膠囊)</label>
+            <div id="expense-splitters" class="flex flex-wrap gap-1.5 py-1"></div>
+          </div>
+
+          <button onclick="addExpense()" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-lg shadow-sm transition-all active:scale-[0.99] flex items-center justify-center gap-1.5 mt-2">
+            <i class="fa-solid fa-check"></i> 儲存並同步到 Google Sheet
+          </button>
+        </div>
+
+        <!-- Panel 2: 拆帳與累積金額總覽 -->
+        <div id="panel-summary" class="hidden">
+          <div id="expense-summary"></div>
+        </div>
+
+        <!-- Panel 3: 歷史消費清單 -->
+        <div id="panel-list" class="hidden">
+          <div id="expense-list" class="space-y-2 max-h-80 overflow-y-auto pr-1"></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. 快速跳轉 Tab 導覽列 -->
+  <nav class="sticky top-12 z-40 bg-white/90 backdrop-blur border-b border-slate-200 py-2 my-8 shadow-sm">
+    <div id="day-nav-container" class="max-w-4xl mx-auto px-4 flex space-x-2 overflow-x-auto no-scrollbar"></div>
+  </nav>
+
+  <!-- 7. 一頁式行程卡片區塊 -->
+  <main id="itinerary-container" class="max-w-4xl mx-auto px-4 space-y-6">
+    <div id="loading-spinner" class="text-center py-12">
+      <i class="fa-solid fa-circle-notch fa-spin text-3xl text-slate-400"></i>
+      <p class="text-sm text-slate-500 mt-3 font-medium">正在讀取最新的試算表行程資料...</p>
+    </div>
+  </main>
+
+  <!-- 8. JavaScript 邏輯 -->
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycby3lp2T_FBEQWGLrenjUW5rbmw5WyAO477YXn1Y84PRB6eo2f8Elf-CRcpK4vnB3GHpNw/exec";
+    const mapInstances = {};
+    let thbToTwdRate = 0.92;
+    let dailyWeatherData = {}; 
+    const currencySymbols = { 'THB': '฿', 'TWD': 'NT$' };
+
+    let members = [];
+    let expenses = JSON.parse(localStorage.getItem('chiangmai_expenses') || '[]');
+    let defaultCurrency = 'THB';
+    let selectedPayerId = '';
+    let selectedSplitters = [];
+    let selectedCategory = '食物';
+
+    const fallbackMembers = [
+      { MemberId: 'M1', Name: '兄弟 A', Avatar: '👦', Status: 'Active' },
+      { MemberId: 'M2', Name: '兄弟 B', Avatar: '👨', Status: 'Active' }
+    ];
+
+    function escapeJsString(str) {
+      if (!str) return '';
+      return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
+    }
+
+    function speakThai(text, btnElement) {
+      if (!('speechSynthesis' in window)) {
+        alert('您的瀏覽器不支援語音朗讀功能');
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'th-TH';
+      utterance.rate = 0.9;
+
+      const originalHtml = btnElement.innerHTML;
+      btnElement.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xs"></i>`;
+      btnElement.classList.add('bg-emerald-500');
+
+      utterance.onend = () => { btnElement.innerHTML = originalHtml; btnElement.classList.remove('bg-emerald-500'); };
+      utterance.onerror = () => { btnElement.innerHTML = originalHtml; btnElement.classList.remove('bg-emerald-500'); };
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function getWeatherIcon(weatherCode, rainProb) {
+      if (weatherCode === 0) return { icon: "fa-sun", color: "text-amber-500" };
+      if (weatherCode >= 1 && weatherCode <= 3) return { icon: "fa-cloud-sun", color: "text-amber-400" };
+      if (weatherCode >= 95) return { icon: "fa-cloud-bolt", color: "text-purple-500" };
+      if (weatherCode >= 61 && weatherCode <= 67) return { icon: "fa-cloud-showers-heavy", color: "text-blue-600" };
+      if (weatherCode >= 51 && weatherCode <= 55) return { icon: "fa-cloud-rain", color: "text-blue-400" };
+      
+      if (rainProb >= 70) return { icon: "fa-cloud-showers-heavy", color: "text-blue-600" };
+      if (rainProb >= 40) return { icon: "fa-cloud-rain", color: "text-blue-400" };
+      if (rainProb >= 20) return { icon: "fa-cloud-sun", color: "text-amber-400" };
+      return { icon: "fa-sun", color: "text-amber-500" };
+    }
+
+    async function fetchChiangMaiWeather() {
+      const weatherContainer = document.getElementById('weather-hourly');
+      const tempContainer = document.getElementById('current-temp');
+
+      try {
+        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=18.7883&longitude=98.9853&hourly=temperature_2m,precipitation_probability,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&current_weather=true&timezone=Asia%2FBangkok");
+        const data = await response.json();
+
+        if (data.current_weather) {
+          tempContainer.innerText = `目前 ${Math.round(data.current_weather.temperature)}°C`;
         }
 
-        // ==========================================
-        // 2. Google Maps URL 自動解析經緯度核心邏輯
-        // ==========================================
-        function parseGoogleMapsUrl(url) {
-            if (!url) return null;
-            
-            // 模式 1: @lat,lng (常見於標準 Google Maps 網址)
-            const atMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-            if (atMatch) {
-                return {
-                    lat: parseFloat(parseFloat(atMatch[1]).toFixed(7)),
-                    lng: parseFloat(parseFloat(atMatch[2]).toFixed(7))
-                };
-            }
+        if (data.hourly && data.hourly.time) {
+          const currentHour = new Date().getHours();
+          let hourlyHtml = '';
+          for (let i = currentHour; i < currentHour + 5 && i < data.hourly.time.length; i++) {
+            const hourLabel = `${data.hourly.time[i].substring(11, 13)}:00`;
+            const temp = Math.round(data.hourly.temperature_2m[i]);
+            const rainProb = data.hourly.precipitation_probability[i] || 0;
+            const code = data.hourly.weathercode[i];
+            const weather = getWeatherIcon(code, rainProb);
 
-            // 模式 2: !3dlat!4dlng (常見於分享鏈接與地點詳細頁)
-            const d3d4Match = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
-            if (d3d4Match) {
-                return {
-                    lat: parseFloat(parseFloat(d3d4Match[1]).toFixed(7)),
-                    lng: parseFloat(parseFloat(d3d4Match[2]).toFixed(7))
-                };
-            }
-
-            // 模式 3: ?q=lat,lng 或 ll=lat,lng
-            const qMatch = url.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
-            if (qMatch) {
-                return {
-                    lat: parseFloat(parseFloat(qMatch[1]).toFixed(7)),
-                    lng: parseFloat(parseFloat(qMatch[2]).toFixed(7))
-                };
-            }
-
-            return null;
+            hourlyHtml += `
+              <div class="flex-shrink-0 bg-slate-800/80 p-2 rounded-lg border border-slate-700/60 text-center w-16">
+                <div class="text-[10px] text-slate-400 font-medium">${hourLabel}</div>
+                <div class="my-1"><i class="fa-solid ${weather.icon} ${weather.color} text-sm"></i></div>
+                <div class="text-xs font-bold text-white">${temp}°C</div>
+                <div class="text-[10px] text-blue-300 font-medium">${rainProb}%</div>
+              </div>
+            `;
+          }
+          weatherContainer.innerHTML = hourlyHtml;
         }
 
-        // Modal 內即時預覽解析結果
-        function previewGeoParse() {
-            const urlInput = document.getElementById('modal-maps-url').value;
-            const geo = parseGoogleMapsUrl(urlInput);
-            
-            if (geo) {
-                document.getElementById('parse-lat').innerText = geo.lat;
-                document.getElementById('parse-lng').innerText = geo.lng;
-            } else {
-                document.getElementById('parse-lat').innerText = '未解析到';
-                document.getElementById('parse-lng').innerText = '未解析到';
-            }
+        if (data.daily && data.daily.time) {
+          for (let i = 0; i < data.daily.time.length; i++) {
+            const dateKey = data.daily.time[i];
+            dailyWeatherData[dateKey] = {
+              maxTemp: Math.round(data.daily.temperature_2m_max[i]),
+              minTemp: Math.round(data.daily.temperature_2m_min[i]),
+              rainProb: data.daily.precipitation_probability_max[i] || 0,
+              weatherCode: data.daily.weathercode[i]
+            };
+          }
         }
 
-        // ==========================================
-        // 3. 頁面初始化與 Supabase 資料載入
-        // ==========================================
-        document.addEventListener('DOMContentLoaded', async () => {
-            await loadExchangeRate();
-            await fetchTripData();
+        fetchAndRenderItinerary();
+
+      } catch (err) {
+        console.error("天氣載入失敗:", err);
+        weatherContainer.innerHTML = `<div class="text-xs text-slate-500 py-1">無法載入 5 小時預報</div>`;
+      }
+    }
+
+    async function fetchLiveExchangeRate() {
+      const infoEl = document.getElementById('exchange-rate-info');
+      try {
+        const res = await fetch("https://open.er-api.com/v6/latest/THB");
+        const data = await res.json();
+        if (data && data.rates && data.rates.TWD) {
+          thbToTwdRate = data.rates.TWD;
+          infoEl.innerText = `即時匯率: 1 THB ≈ ${thbToTwdRate.toFixed(2)} TWD`;
+          renderExpenses();
+        }
+      } catch (err) {
+        console.error("匯率抓取失敗，使用備用匯率", err);
+        infoEl.innerText = `參考匯率: 1 THB ≈ ${thbToTwdRate} TWD`;
+      }
+    }
+
+    function convertCurrency(source) {
+      const thbInput = document.getElementById('thb-input');
+      const twdInput = document.getElementById('twd-input');
+
+      if (source === 'THB') {
+        const thb = parseFloat(thbInput.value);
+        if (isNaN(thb) || thb <= 0) twdInput.value = '';
+        else twdInput.value = Math.round(thb * thbToTwdRate);
+      } else if (source === 'TWD') {
+        const twd = parseFloat(twdInput.value);
+        if (isNaN(twd) || twd <= 0) thbInput.value = '';
+        else thbInput.value = Math.round(twd / thbToTwdRate);
+      }
+    }
+
+    // ------------------- 💰 拆帳與分帳邏輯 (付款人全膠囊 UI) -------------------
+
+    function selectCategory(cat) {
+      selectedCategory = cat;
+      const categories = ['食物', '交通', '其他'];
+      categories.forEach(c => {
+        const btn = document.getElementById(`cat-btn-${c}`);
+        if (c === cat) {
+          btn.className = "py-2 text-xs font-bold rounded-lg border text-center transition-all bg-amber-500 text-white border-amber-500 shadow-2xs";
+        } else {
+          btn.className = "py-2 text-xs font-bold rounded-lg border text-center transition-all bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100";
+        }
+      });
+    }
+
+    function selectPayer(id) {
+      selectedPayerId = id;
+      renderFormUI();
+    }
+
+    function toggleExpenseSection() {
+      const content = document.getElementById('expense-content');
+      const chevron = document.getElementById('expense-chevron');
+      if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        chevron.style.transform = 'rotate(0deg)';
+      } else {
+        content.classList.add('hidden');
+        chevron.style.transform = 'rotate(-90deg)';
+      }
+    }
+
+    function switchTab(tabName) {
+      const tabs = ['add', 'summary', 'list'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const panel = document.getElementById(`panel-${t}`);
+        if (t === tabName) {
+          panel.classList.remove('hidden');
+          btn.classList.add('border-amber-500', 'text-amber-600');
+          btn.classList.remove('border-transparent', 'text-slate-400');
+        } else {
+          panel.classList.add('hidden');
+          btn.classList.remove('border-amber-500', 'text-amber-600');
+          btn.classList.add('border-transparent', 'text-slate-400');
+        }
+      });
+    }
+
+    async function syncExpensesFromSheet() {
+      const syncStatusEl = document.getElementById('sync-status');
+      syncStatusEl.innerHTML = `<span class="text-amber-400"><i class="fa-solid fa-arrows-rotate fa-spin"></i> 同步資料中...</span>`;
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+        const res = await fetch(`${API_URL}?action=getExpensesData`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        const data = await res.json();
+
+        if (data.status === 'success' && data.members && data.members.length > 0) {
+          members = data.members;
+          if (data.expenses && data.expenses.length > 0) {
+            expenses = data.expenses;
+            saveExpensesToLocal();
+          }
+          defaultCurrency = data.currency || 'THB';
+          syncStatusEl.innerText = '點擊可展開或收折記帳面板';
+        } else {
+          throw new Error('回傳資料無效');
+        }
+      } catch (err) {
+        console.warn('GAS 讀取失敗，使用離線預設備用資料:', err);
+        if (members.length === 0) members = fallbackMembers;
+        syncStatusEl.innerText = '使用離線資料';
+      } finally {
+        const activeMembers = members.filter(m => m.Status !== 'Left');
+        if (activeMembers.length > 0 && !selectedPayerId) {
+          selectedPayerId = activeMembers[0].MemberId;
+        }
+        if (selectedSplitters.length === 0) {
+          selectedSplitters = activeMembers.map(m => m.MemberId);
+        }
+        renderFormUI();
+        renderExpenses();
+      }
+    }
+
+    // 動態渲染付款人膠囊與平分人膠囊
+    function renderFormUI() {
+      const payerCapsulesDiv = document.getElementById('expense-payer-capsules');
+      const splittersDiv = document.getElementById('expense-splitters');
+      const activeMembers = members.filter(m => m.Status !== 'Left');
+
+      // 渲染付款人膠囊 (單選)
+      payerCapsulesDiv.innerHTML = activeMembers.map(m => {
+        const isSelected = (m.MemberId === selectedPayerId);
+        return `
+          <button type="button" onclick="selectPayer('${m.MemberId}')" class="px-3 py-1.5 text-xs rounded-full border font-bold transition-all ${
+            isSelected 
+              ? 'bg-slate-900 text-amber-400 border-slate-900 shadow-sm' 
+              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+          }">
+            ${m.Avatar} ${m.Name}
+          </button>
+        `;
+      }).join('');
+
+      // 渲染平分人膠囊 (複選)
+      splittersDiv.innerHTML = activeMembers.map(m => {
+        const isSelected = selectedSplitters.includes(m.MemberId);
+        return `
+          <button type="button" onclick="toggleSplitter('${m.MemberId}')" class="px-2.5 py-1 text-xs rounded-full border transition-all ${
+            isSelected 
+              ? 'bg-amber-500 text-white border-amber-500 font-bold shadow-2xs' 
+              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+          }">
+            ${m.Avatar} ${m.Name}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function toggleSplitter(id) {
+      if (selectedSplitters.includes(id)) {
+        if (selectedSplitters.length === 1) return;
+        selectedSplitters = selectedSplitters.filter(sId => sId !== id);
+      } else {
+        selectedSplitters.push(id);
+      }
+      renderFormUI();
+    }
+
+    function saveExpensesToLocal() {
+      localStorage.setItem('chiangmai_expenses', JSON.stringify(expenses));
+    }
+
+    function renderExpenses() {
+      const listEl = document.getElementById('expense-list');
+      const summaryEl = document.getElementById('expense-summary');
+      const countEl = document.getElementById('expense-count');
+
+      countEl.innerText = `${expenses.length} 筆`;
+
+      if (expenses.length === 0) {
+        listEl.innerHTML = `<p class="text-xs text-slate-400 py-6 text-center border border-dashed border-slate-200 rounded-lg">尚無消費明細</p>`;
+        summaryEl.innerHTML = `<p class="text-xs text-slate-500 py-4 text-center">尚無記帳資料，輸入項目後將自動為您統計結算。</p>`;
+        return;
+      }
+
+      const memberMap = {};
+      members.forEach(m => { memberMap[m.MemberId] = m; });
+      const currSymbol = currencySymbols[defaultCurrency] || defaultCurrency;
+      const catIconMap = { '食物': '🍔', '交通': '🚕', '其他': '🛍️' };
+
+      // 歷史明細 Tab
+      listEl.innerHTML = expenses.slice().reverse().map(exp => {
+        const payer = memberMap[exp.PayerId] || { Name: exp.PayerId, Avatar: '👤' };
+        const splitIds = (exp.SplitWith || '').split(',').filter(Boolean);
+        const splitAvatars = splitIds.map(id => (memberMap[id] ? memberMap[id].Avatar : '')).join(' ');
+
+        const catIcon = catIconMap[exp.Category] || '📝';
+        const twdEst = defaultCurrency === 'THB' ? `≈ NT$ ${Math.round(exp.Amount * thbToTwdRate)}` : '';
+
+        return `
+          <div class="bg-slate-50 border border-slate-200/80 p-2.5 rounded-xl flex justify-between items-center text-xs">
+            <div class="flex-1 pr-2">
+              <div class="font-bold text-slate-800 flex items-center gap-1.5">
+                <span>${catIcon} ${exp.Note || exp.Category}</span>
+                <span class="text-[10px] bg-slate-200/70 text-slate-600 px-1.5 py-0.2 rounded font-normal">${exp.Category}</span>
+              </div>
+              <p class="text-[10px] text-slate-400 mt-0.5">
+                由 <strong class="text-slate-700">${payer.Avatar}${payer.Name}</strong> 付款 · 平分: ${splitAvatars || '所有人'}
+              </p>
+            </div>
+            <div class="text-right">
+              <span class="font-extrabold text-slate-900 block">${currSymbol}${exp.Amount}</span>
+              ${twdEst ? `<span class="text-[10px] text-slate-400 block">${twdEst}</span>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 計算各成員墊款與累積應付
+      const paidMap = {};
+      const owedMap = {};
+      members.forEach(m => { paidMap[m.MemberId] = 0; owedMap[m.MemberId] = 0; });
+
+      let totalSpent = 0;
+      expenses.forEach(exp => {
+        const amt = parseFloat(exp.Amount) || 0;
+        totalSpent += amt;
+
+        if (paidMap[exp.PayerId] !== undefined) paidMap[exp.PayerId] += amt;
+        else paidMap[exp.PayerId] = amt;
+
+        const splitIds = (exp.SplitWith || '').split(',').filter(Boolean);
+        if (splitIds.length > 0) {
+          const splitShare = amt / splitIds.length;
+          splitIds.forEach(id => {
+            if (owedMap[id] !== undefined) owedMap[id] += splitShare;
+            else owedMap[id] = splitShare;
+          });
+        }
+      });
+
+      // 找補演算法
+      const debtors = [];
+      const creditors = [];
+      Object.keys(paidMap).forEach(id => {
+        const net = paidMap[id] - (owedMap[id] || 0);
+        if (net < -0.1) debtors.push({ id, amount: Math.abs(net) });
+        else if (net > 0.1) creditors.push({ id, amount: net });
+      });
+
+      const transactions = [];
+      let i = 0, j = 0;
+      while (i < debtors.length && j < creditors.length) {
+        const debtor = debtors[i];
+        const creditor = creditors[j];
+        const minAmt = Math.min(debtor.amount, creditor.amount);
+
+        transactions.push({ from: debtor.id, to: creditor.id, amount: Math.round(minAmt) });
+        debtor.amount -= minAmt;
+        creditor.amount -= minAmt;
+
+        if (debtor.amount < 0.1) i++;
+        if (creditor.amount < 0.1) j++;
+      }
+
+      // 拆帳總覽 Tab
+      let resultHtml = `
+        <div class="mb-3 pb-2 border-b border-amber-200/60 flex justify-between items-center text-xs">
+          <span>全團總消費: <strong class="text-slate-900 text-sm">${currSymbol}${Math.round(totalSpent)}</strong> ${defaultCurrency === 'THB' ? `<span class="text-[10px] text-slate-400">(≈NT$ ${Math.round(totalSpent * thbToTwdRate)})</span>` : ''}</span>
+          <span class="text-[10px] text-slate-500">成員: ${members.length} 人</span>
+        </div>
+
+        <div class="mb-3">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">個人累積應付總額 (含平分)</span>
+          <div class="grid grid-cols-2 gap-1.5">
+            ${members.map(m => {
+              const personalSpent = Math.round(owedMap[m.MemberId] || 0);
+              const twdPersonal = defaultCurrency === 'THB' ? `≈ NT$ ${Math.round(personalSpent * thbToTwdRate)}` : '';
+              return `
+                <div class="bg-amber-50/50 border border-amber-100 p-2 rounded-lg text-xs flex items-center justify-between">
+                  <span class="font-bold text-slate-700 truncate">${m.Avatar} ${m.Name}</span>
+                  <div class="text-right flex-shrink-0">
+                    <span class="font-extrabold text-amber-700 block">${currSymbol}${personalSpent}</span>
+                    ${twdPersonal ? `<span class="text-[9px] text-slate-400 block">${twdPersonal}</span>` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">建議結算找補路徑</span>
+      `;
+
+      if (transactions.length === 0) {
+        resultHtml += `<div class="text-xs font-bold text-emerald-700 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> 目前所有成員帳目完美平衡，互不相欠！</div>`;
+      } else {
+        resultHtml += `<div class="space-y-1.5">`;
+        transactions.forEach(t => {
+          const fromMember = memberMap[t.from] || { Name: t.from, Avatar: '👤' };
+          const toMember = memberMap[t.to] || { Name: t.to, Avatar: '👤' };
+          const twdEst = defaultCurrency === 'THB' ? `(約 NT$ ${Math.round(t.amount * thbToTwdRate)})` : '';
+
+          resultHtml += `
+            <div class="text-xs font-bold text-slate-800 flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-200/70">
+              <div class="flex items-center gap-1.5">
+                <span>${fromMember.Avatar} <strong>${fromMember.Name}</strong></span>
+                <i class="fa-solid fa-arrow-right text-amber-500 text-[10px]"></i>
+                <span>${toMember.Avatar} <strong>${toMember.Name}</strong></span>
+              </div>
+              <div class="text-right">
+                <span class="text-rose-600 font-extrabold text-sm">${currSymbol}${t.amount}</span>
+                <span class="text-[10px] text-slate-400 font-normal ml-0.5">${twdEst}</span>
+              </div>
+            </div>
+          `;
+        });
+        resultHtml += `</div>`;
+      }
+
+      summaryEl.innerHTML = resultHtml;
+    }
+
+    async function addExpense() {
+      const amountInput = document.getElementById('expense-amount');
+      const noteInput = document.getElementById('expense-note');
+
+      const amount = parseFloat(amountInput.value);
+      if (!amount || amount <= 0) {
+        alert('請輸入有效的消費金額！');
+        return;
+      }
+
+      const newExpense = {
+        ExpenseId: 'E' + Date.now().toString().slice(-6),
+        Timestamp: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Bangkok' }),
+        PayerId: selectedPayerId,
+        Amount: amount,
+        Category: selectedCategory,
+        Note: noteInput.value.trim() || selectedCategory,
+        SplitWith: selectedSplitters.join(',')
+      };
+
+      expenses.push(newExpense);
+      saveExpensesToLocal();
+      renderExpenses();
+
+      amountInput.value = '';
+      noteInput.value = '';
+
+      switchTab('list');
+
+      try {
+        await fetch(API_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'addExpense', data: newExpense })
+        });
+      } catch (err) {
+        console.error('寫入 Google Sheet 失敗:', err);
+      }
+    }
+
+    function copyToClipboard(text, btnElement) {
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = btnElement.innerHTML;
+        btnElement.innerHTML = `<i class="fa-solid fa-check text-emerald-600 mr-1"></i> 已複製！`;
+        btnElement.classList.add("bg-emerald-50", "text-emerald-700");
+        setTimeout(() => {
+          btnElement.innerHTML = originalText;
+          btnElement.classList.remove("bg-emerald-50", "text-emerald-700");
+        }, 2000);
+      });
+    }
+
+    function toggleMap(eventId, lat, lng, title) {
+      const container = document.getElementById(`map-container-${eventId}`);
+      const btn = document.getElementById(`map-btn-${eventId}`);
+      if (!container) return;
+
+      if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        if (btn) btn.classList.add('bg-amber-100', 'text-amber-800');
+
+        if (!mapInstances[eventId]) {
+          const map = L.map(`map-${eventId}`, { attributionControl: false, zoomControl: true }).setView([lat, lng], 14);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+          L.circle([lat, lng], { color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.15, radius: 1000 }).addTo(map);
+          L.marker([lat, lng]).addTo(map).bindPopup(`<b>${title}</b>`).openPopup();
+          mapInstances[eventId] = map;
+        }
+
+        setTimeout(() => {
+          if (mapInstances[eventId]) mapInstances[eventId].invalidateSize();
+        }, 200);
+
+      } else {
+        container.classList.add('hidden');
+        if (btn) btn.classList.remove('bg-amber-100', 'text-amber-800');
+      }
+    }
+
+    function updateCountdown() {
+      const startDate = new Date('2026-10-09T00:00:00');
+      const endDate = new Date('2026-10-17T23:59:59');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      startDate.setHours(0, 0, 0, 0);
+
+      const diffDays = Math.ceil((startDate - today) / (1000 * 60 * 60 * 24));
+      const countdownEl = document.getElementById('countdown-text');
+
+      if (diffDays > 0) {
+        countdownEl.innerText = `距離出發還有 ${diffDays} 天`;
+      } else if (diffDays <= 0 && today <= endDate) {
+        countdownEl.innerText = `清邁之旅進行中！第 ${Math.abs(diffDays) + 1} 天`;
+      } else {
+        countdownEl.innerText = `旅程已圓滿結束`;
+      }
+    }
+
+    const categoryBadgeStyles = {
+      "交通": "bg-slate-900/80 text-white",
+      "景點": "bg-emerald-600 text-white",
+      "美食": "bg-amber-500 text-white",
+      "購物": "bg-purple-600 text-white",
+      "放鬆": "bg-sky-600 text-white"
+    };
+
+    const defaultDays = [
+      { dayId: "day-1", dayLabel: "D1", date: "10/09", isoDate: "2026-10-09", fullDate: "10/09 (五)", title: "行程規劃中" },
+      { dayId: "day-2", dayLabel: "D2", date: "10/10", isoDate: "2026-10-10", fullDate: "10/10 (六)", title: "行程規劃中" },
+      { dayId: "day-3", dayLabel: "D3", date: "10/11", isoDate: "2026-10-11", fullDate: "10/11 (日)", title: "行程規劃中" },
+      { dayId: "day-4", dayLabel: "D4", date: "10/12", isoDate: "2026-10-12", fullDate: "10/12 (一)", title: "行程規劃中" },
+      { dayId: "day-5", dayLabel: "D5", date: "10/13", isoDate: "2026-10-13", fullDate: "10/13 (二)", title: "行程規劃中" },
+      { dayId: "day-6", dayLabel: "D6", date: "10/14", isoDate: "2026-10-14", fullDate: "10/14 (三)", title: "行程規劃中" },
+      { dayId: "day-7", dayLabel: "D7", date: "10/15", isoDate: "2026-10-15", fullDate: "10/15 (四)", title: "行程規劃中" },
+      { dayId: "day-8", dayLabel: "D8", date: "10/16", isoDate: "2026-10-16", fullDate: "10/16 (五)", title: "行程規劃中" },
+      { dayId: "day-9", dayLabel: "D9", date: "10/17", isoDate: "2026-10-17", fullDate: "10/17 (六)", title: "行程規劃中" }
+    ];
+
+    function toggleDayAccordion(dayId, forceOpen = false) {
+      const contentEl = document.getElementById(`content-${dayId}`);
+      const iconEl = document.getElementById(`icon-${dayId}`);
+      if (!contentEl) return;
+
+      const isHidden = contentEl.classList.contains("hidden");
+
+      if (forceOpen || isHidden) {
+        contentEl.classList.remove("hidden");
+        if (iconEl) {
+          iconEl.classList.remove("fa-plus");
+          iconEl.classList.add("fa-minus");
+        }
+      } else {
+        contentEl.classList.add("hidden");
+        if (iconEl) {
+          iconEl.classList.remove("fa-minus");
+          iconEl.classList.add("fa-plus");
+        }
+      }
+    }
+
+    function scrollToDayAndExpand(dayId) {
+      toggleDayAccordion(dayId, true);
+      const targetElement = document.getElementById(dayId);
+      if (targetElement) {
+        const yOffset = -110;
+        const y = targetElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }
+
+    async function fetchAndRenderItinerary() {
+      const container = document.getElementById("itinerary-container");
+      const navContainer = document.getElementById("day-nav-container");
+
+      try {
+        const response = await fetch(API_URL);
+        const rawData = await response.json();
+
+        const daysMap = {};
+        defaultDays.forEach(d => { daysMap[d.dayId] = { ...d, events: [] }; });
+
+        if (Array.isArray(rawData)) {
+          rawData.forEach((row, idx) => {
+            const dayKey = (row.DayId || row.dayId || "").toString().toLowerCase().trim();
+            if (daysMap[dayKey]) {
+              if (row.DayTitle) daysMap[dayKey].title = row.DayTitle;
+              
+              const eventObj = {
+                id: `evt-${idx}`,
+                time: row.Time || "",
+                category: row.Category || "景點",
+                title: row.Title || "未命名行程",
+                subtitle: row.Subtitle || "",
+                address: row.Address || row.Title,
+                thaiName: row.ThaiName || "",
+                image: row.Image || "https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=600&q=80",
+                notes: row.Notes ? row.Notes.toString().split(';') : [],
+                mapUrl: row.MapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(row.Address || row.Title || "Chiang Mai")}`,
+                lat: row.Lat ? parseFloat(row.Lat) : null,
+                lng: row.Lng ? parseFloat(row.Lng) : null
+              };
+
+              daysMap[dayKey].events.push(eventObj);
+            }
+          });
+        }
+
+        container.innerHTML = "";
+        navContainer.innerHTML = "";
+
+        const allDays = Object.values(daysMap);
+
+        allDays.forEach((day, index) => {
+          const wData = dailyWeatherData[day.isoDate];
+          let weatherTagHtml = '';
+          if (wData) {
+            const wInfo = getWeatherIcon(wData.weatherCode, wData.rainProb);
+            weatherTagHtml = `
+              <div class="mt-1 pt-1 border-t border-slate-200/60 flex items-center justify-center gap-1 text-[10px]">
+                <i class="fa-solid ${wInfo.icon} ${wInfo.color}"></i>
+                <span class="font-semibold text-slate-600">${wData.minTemp}°-${wData.maxTemp}°</span>
+              </div>
+            `;
+          }
+
+          const navBtn = document.createElement("button");
+          navBtn.onclick = () => scrollToDayAndExpand(day.dayId);
+          navBtn.className = "flex-shrink-0 bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 px-3.5 py-2 rounded-xl text-xs text-center font-bold transition shadow-sm";
+          navBtn.innerHTML = `
+            <div class="flex items-center justify-center gap-1">
+              <span>${day.dayLabel}</span>
+              <span class="font-normal text-[10px] text-slate-500">${day.date}</span>
+            </div>
+            ${weatherTagHtml}
+          `;
+          navContainer.appendChild(navBtn);
+
+          const isDefaultOpen = index === 0;
+
+          let eventsHtml = "";
+          if (day.events.length === 0) {
+            eventsHtml = `<div class="bg-white p-6 rounded-xl border border-dashed border-slate-300 text-center text-slate-400 text-sm">此天尚未新增行程，開啟 Google Sheet 即可隨時填寫！</div>`;
+          } else {
+            eventsHtml = day.events.map(event => {
+              const hasCoords = event.lat && event.lng;
+              const safeTitle = escapeJsString(event.title);
+              const safeAddress = escapeJsString(event.address);
+              const safeThai = escapeJsString(event.thaiName || event.title);
+
+              return `
+                <article class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 mb-4 transition hover:shadow-lg">
+                  <div class="flex flex-col md:flex-row">
+                    <div class="md:w-1/3 h-48 md:h-auto relative bg-slate-200 flex-shrink-0">
+                      <img src="${event.image}" alt="${safeTitle}" class="w-full h-full object-cover">
+                      <span class="absolute top-3 left-3 ${categoryBadgeStyles[event.category] || "bg-slate-800 text-white"} text-xs px-2.5 py-1 rounded-md font-medium shadow-sm">
+                        ${event.category}
+                      </span>
+                    </div>
+
+                    <div class="p-5 md:w-2/3 flex flex-col justify-between flex-grow">
+                      <div>
+                        <p class="text-xs font-bold text-slate-400 mb-1">${event.time}</p>
+                        <h3 class="text-lg font-bold text-slate-800">${event.title}</h3>
+                        <p class="text-xs text-slate-500 mb-2">${event.subtitle}</p>
+
+                        ${event.thaiName ? `
+                          <div class="bg-amber-50/70 border border-amber-200/60 rounded-lg p-2.5 my-2 flex justify-between items-center">
+                            <div class="pr-2">
+                              <span class="text-[10px] text-amber-700 font-bold block">泰文名稱：</span>
+                              <p class="text-base font-black text-slate-900 leading-tight">${event.thaiName}</p>
+                            </div>
+                            <button onclick="speakThai('${safeThai}', this)" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white p-2 rounded-full flex-shrink-0 transition shadow-sm" title="朗讀泰文">
+                              <i class="fa-solid fa-volume-high text-xs"></i>
+                            </button>
+                          </div>
+                        ` : ''}
+
+                        ${event.notes.length > 0 && event.notes[0] !== "" ? `
+                          <ul class="text-xs text-slate-600 space-y-1 mb-3 list-disc list-inside bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            ${event.notes.map(note => `<li>${note.trim()}</li>`).join('')}
+                          </ul>
+                        ` : ''}
+                      </div>
+
+                      <div class="flex flex-wrap gap-2 pt-3 mt-3 border-t border-slate-100">
+                        <button onclick="copyToClipboard('${safeAddress}', this)" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-md font-semibold transition flex items-center gap-1">
+                          <i class="fa-regular fa-copy"></i> 複製地址 (Grab)
+                        </button>
+                        <a href="${event.mapUrl}" target="_blank" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1">
+                          <i class="fa-solid fa-location-dot text-red-500"></i> Google Maps
+                        </a>
+                        ${hasCoords ? `
+                          <button id="map-btn-${event.id}" onclick="toggleMap('${event.id}', ${event.lat}, ${event.lng}, '${safeTitle}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1">
+                            <i class="fa-solid fa-map text-amber-500"></i> 周邊 1km 地圖
+                          </button>
+                        ` : ''}
+                      </div>
+                    </div>
+                  </div>
+
+                  ${hasCoords ? `
+                    <div id="map-container-${event.id}" class="hidden border-t border-slate-100 bg-slate-50 p-3">
+                      <div id="map-${event.id}" class="w-full h-56 rounded-lg shadow-inner"></div>
+                    </div>
+                  ` : ''}
+                </article>
+              `;
+            }).join('');
+          }
+
+          const section = document.createElement("section");
+          section.id = day.dayId;
+          section.className = "bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden scroll-mt-28 transition";
+          
+          section.innerHTML = `
+            <button onclick="toggleDayAccordion('${day.dayId}')" class="w-full px-5 py-4 bg-slate-900 hover:bg-slate-800 text-white flex justify-between items-center text-left transition">
+              <div>
+                <span class="text-xs font-bold text-amber-400 tracking-wider">DAY 0${index + 1} · ${day.fullDate}</span>
+                <h2 class="text-xl font-bold text-white">${day.title}</h2>
+              </div>
+              <div class="bg-slate-800 p-2 rounded-full border border-slate-700 text-amber-400 flex items-center justify-center w-8 h-8">
+                <i id="icon-${day.dayId}" class="fa-solid ${isDefaultOpen ? 'fa-minus' : 'fa-plus'} text-sm"></i>
+              </div>
+            </button>
+
+            <div id="content-${day.dayId}" class="p-4 bg-slate-50/50 space-y-4 ${isDefaultOpen ? '' : 'hidden'}">
+              ${eventsHtml}
+            </div>
+          `;
+
+          container.appendChild(section);
         });
 
-        // 取得即時匯率
-        async function loadExchangeRate() {
-            try {
-                const res = await fetch('https://api.exchangerate-api.com/v4/latest/THB');
-                const data = await res.json();
-                if (data && data.rates && data.rates.TWD) {
-                    currentRate = data.rates.TWD;
-                    document.getElementById('rate-source').innerText = '即時 API';
-                }
-            } catch (e) {
-                document.getElementById('rate-source').innerText = '備用預設';
-            }
-            document.getElementById('current-rate-display').innerText = `1 THB ≈ ${currentRate.toFixed(4)} TWD`;
-        }
+      } catch (error) {
+        console.error("載入失敗:", error);
+        container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl text-center text-sm">無法載入資料，請確認 API 存取權限。</div>`;
+      }
+    }
 
-        // 從 Supabase 抓取旅程與住宿資料
-        async function fetchTripData() {
-            if (!supabaseClient) {
-                renderFallbackData();
-                return;
-            }
-
-            try {
-                // 讀取 trip_config
-                const { data: config } = await supabaseClient
-                    .from('trip_config')
-                    .select('*')
-                    .eq('trip_id', CURRENT_TRIP_ID)
-                    .single();
-
-                if (config) renderConfig(config);
-
-                // 讀取 accommodations
-                const { data: list } = await supabaseClient
-                    .from('accommodations')
-                    .select('*')
-                    .eq('trip_id', CURRENT_TRIP_ID)
-                    .order('date', { ascending: true });
-
-                if (list && list.length > 0) {
-                    renderAccommodations(list);
-                } else {
-                    renderFallbackData();
-                }
-            } catch (err) {
-                console.error('Fetch error:', err);
-                renderFallbackData();
-            }
-        }
-
-        // 渲染旅程主資訊
-        function renderConfig(config) {
-            document.getElementById('trip-badge').innerText = config.title || 'TRIP';
-            document.getElementById('trip-title').innerText = config.subtitle || '自由行';
-            
-            // 計算倒數天數
-            if (config.start_date) {
-                const start = new Date(config.start_date);
-                const today = new Date();
-                const diffTime = start - today;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                document.getElementById('countdown-timer').innerText = diffDays > 0 ? `${diffDays} 天` : '旅程進行中';
-            }
-
-            // 航班
-            if (config.outbound_flight) {
-                document.getElementById('outbound-code').innerText = config.outbound_flight.code;
-                document.getElementById('outbound-route').innerText = config.outbound_flight.route;
-                document.getElementById('outbound-time').innerText = config.outbound_flight.time;
-            }
-            if (config.inbound_flight) {
-                document.getElementById('inbound-code').innerText = config.inbound_flight.code;
-                document.getElementById('inbound-route').innerText = config.inbound_flight.route;
-                document.getElementById('inbound-time').innerText = config.inbound_flight.time;
-            }
-        }
-
-        // 渲染住宿列表
-        function renderAccommodations(items) {
-            const container = document.getElementById('accommodations-list');
-            container.innerHTML = '';
-
-            items.forEach((item, idx) => {
-                const hasGeo = item.latitude && item.longitude;
-                const mapUrl = item.google_maps_url || (hasGeo ? `https://www.google.com/maps/search/?api=1&query=${item.latitude},${item.longitude}` : '#');
-
-                const card = document.createElement('div');
-                card.className = "p-4 border border-gray-100 rounded-xl bg-gray-50/50 hover:bg-white hover:shadow-md transition space-y-2";
-                
-                card.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <span class="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">Day ${idx + 1} · ${item.date}</span>
-                            <h3 class="font-bold text-gray-800 text-base mt-1">${item.hotel_name}</h3>
-                        </div>
-                        <button onclick='openEditModal(${JSON.stringify(item)})' class="text-xs text-gray-400 hover:text-emerald-600 bg-white border border-gray-200 px-2.5 py-1 rounded-lg">
-                            <i class="fa-solid fa-pen-to-square"></i> 編輯
-                        </button>
-                    </div>
-
-                    ${item.address ? `<p class="text-xs text-gray-600 flex items-center gap-1"><i class="fa-solid fa-location-dot text-gray-400"></i> ${item.address}</p>` : ''}
-                    ${item.address_th ? `<p class="text-xs text-emerald-800 font-medium bg-emerald-50/80 p-1.5 rounded-lg">泰文地址: ${item.address_th}</p>` : ''}
-
-                    <div class="flex items-center justify-between pt-2 border-t border-gray-100 text-xs">
-                        <span class="text-gray-400">
-                            ${hasGeo ? `<i class="fa-solid fa-circle-check text-emerald-500"></i> 已記錄經緯度 (${item.latitude},${item.longitude})` : '<i class="fa-solid fa-triangle-exclamation text-amber-500"></i> 未定位經緯度'}
-                        </span>
-                        ${item.google_maps_url ? `
-                            <a href="${mapUrl}" target="_blank" class="text-emerald-700 font-semibold hover:underline flex items-center gap-1">
-                                <i class="fa-solid fa-map-location-dot"></i> 在地圖開啟
-                            </a>
-                        ` : ''}
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        // 預設純前端備用資料
-        function renderFallbackData() {
-            document.getElementById('trip-badge').innerText = 'BROTHERS TRIP';
-            document.getElementById('trip-title').innerText = '清邁 9天8夜 自由行';
-            document.getElementById('countdown-timer').innerText = '倒數中';
-            
-            const fallbackList = [
-                { date: '2026-10-09', hotel_name: 'InterContinental Chiang Mai The Mae Ping', address: '153 Sridonchai Rd', google_maps_url: '', latitude: 18.7818456, longitude: 98.9998071 },
-                { date: '2026-10-12', hotel_name: 'U Nimman Chiang Mai', address: '1 Nimmanhaemin Road', google_maps_url: '', latitude: 18.8006579, longitude: 98.9679880 }
-            ];
-            renderAccommodations(fallbackList);
-        }
-
-        // ==========================================
-        // 4. Modal 彈窗控制與 Upsert 寫回資料庫
-        // ==========================================
-        function openEditModal(item) {
-            document.getElementById('modal-date').value = item.date;
-            document.getElementById('modal-date-display').value = item.date;
-            document.getElementById('modal-hotel-name').value = item.hotel_name || '';
-            document.getElementById('modal-address').value = item.address || '';
-            document.getElementById('modal-address-th').value = item.address_th || '';
-            document.getElementById('modal-maps-url').value = item.google_maps_url || '';
-            
-            previewGeoParse();
-            document.getElementById('edit-modal').classList.remove('hidden');
-            document.getElementById('edit-modal').classList.add('flex');
-        }
-
-        function closeEditModal() {
-            document.getElementById('edit-modal').classList.add('hidden');
-            document.getElementById('edit-modal').classList.remove('flex');
-        }
-
-        async function saveAccommodation(e) {
-            e.preventDefault();
-            const saveBtn = document.getElementById('save-btn');
-            saveBtn.innerText = '儲存中...';
-            saveBtn.disabled = true;
-
-            const date = document.getElementById('modal-date').value;
-            const hotelName = document.getElementById('modal-hotel-name').value;
-            const address = document.getElementById('modal-address').value;
-            const addressTh = document.getElementById('modal-address-th').value;
-            const mapsUrl = document.getElementById('modal-maps-url').value;
-
-            // 自動解析經緯度
-            const geo = parseGoogleMapsUrl(mapsUrl);
-
-            const payload = {
-                trip_id: CURRENT_TRIP_ID,
-                date: date,
-                hotel_name: hotelName,
-                address: address || null,
-                address_th: addressTh || null,
-                google_maps_url: mapsUrl || null,
-                latitude: geo ? geo.lat : null,
-                longitude: geo ? geo.lng : null
-            };
-
-            if (supabaseClient) {
-                const { error } = await supabaseClient
-                    .from('accommodations')
-                    .upsert([payload], { onConflict: 'trip_id,date' });
-
-                if (error) {
-                    alert('儲存失敗：' + error.message);
-                } else {
-                    await fetchTripData();
-                    closeEditModal();
-                }
-            } else {
-                alert('未設定 Supabase 憑證，僅在本地展示');
-                closeEditModal();
-            }
-
-            saveBtn.innerText = '儲存並同步';
-            saveBtn.disabled = false;
-        }
-
-        // ==========================================
-        // 5. 匯率計算機
-        // ==========================================
-        function convertCurrency() {
-            const thb = parseFloat(document.getElementById('thb-input').value);
-            if (!isNaN(thb) && thb > 0) {
-                const twd = Math.round(thb * currentRate);
-                document.getElementById('twd-output').innerText = twd.toLocaleString();
-                document.getElementById('calc-result').classList.remove('hidden');
-            } else {
-                document.getElementById('calc-result').classList.add('hidden');
-            }
-        }
-    </script>
+    // 初始化呼叫
+    updateCountdown();
+    fetchLiveExchangeRate();
+    fetchChiangMaiWeather();
+    syncExpensesFromSheet();
+  </script>
 </body>
 </html>
